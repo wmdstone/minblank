@@ -1,0 +1,8 @@
+{
+  "name": "Ansor Ngembal Landing Page",
+  "description": "Landing page for Lomba Kitab Fiqih Ansor Ngembal with countdown and FOMO notifications.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
