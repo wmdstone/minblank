@@ -1,3 +1,6 @@
+// src/types/index.ts
+
+
 export interface Member {
   id: string;
   name: string;
@@ -37,6 +40,7 @@ export interface FinanceData {
   transactions: Transaction[];
 }
 
+// INI YANG SEBELUMNYA HILANG ATAU BELUM TER-EKSPOR:
 export interface OrganizationYearData {
   name: string;
   tagline: string;
@@ -49,7 +53,9 @@ export interface OrganizationYearData {
     atas: Member[];
     menengah: Member[];
     bawah: Member[];
+    anggota?: Member[];
   };
   events: OrgEvent[];
   finance: FinanceData;
 }
+

@@ -1,4 +1,5 @@
-import { OrganizationYearData } from '../types';
+import type { OrganizationYearData } from '../types';
+
 
 export const orgData: Record<string, OrganizationYearData> = {
   "2026": {

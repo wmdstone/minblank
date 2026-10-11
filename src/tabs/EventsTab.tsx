@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { OrgEvent } from '../types';
+import type { OrgEvent } from '../types';
 import { Calendar, MapPin, Users } from 'lucide-react';
 
 interface EventsTabProps {

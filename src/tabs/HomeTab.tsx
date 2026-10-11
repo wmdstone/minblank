@@ -1,5 +1,5 @@
 import React from 'react';
-import { OrganizationYearData, OrgEvent } from '../types';
+import type { OrganizationYearData, OrgEvent } from '../types';
 import { ArrowRight, Calendar, Users, ShieldCheck } from 'lucide-react';
 
 interface HomeTabProps {
