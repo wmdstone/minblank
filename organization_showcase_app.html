@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organization Showcase SPA</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font: Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #121c17;
+            color: #f3f4f6;
+        }
+        /* Custom scrollbar hiding for smooth horizontal carousel */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* Touch drag smoothness */
+        .carousel-container {
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+    </style>
+</head>
+<body class="h-full flex justify-center items-center bg-[#0d1612] m-0 p-0 selection:bg-[#3b5848] selection:text-white">
+
+    <div id="app-container" class="w-full max-w-md h-full md:h-[94vh] md:rounded-[40px] bg-[#1d2e26] shadow-2xl flex flex-col relative overflow-hidden border border-[#2d473a]">
+        
+        <!-- Top Status Bar Mockup -->
+        <div class="px-6 pt-4 pb-2 flex justify-between items-center text-xs text-[#8da698] font-medium z-10 bg-[#1d2e26]/90 backdrop-blur-md">
+            <span>9:41</span>
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-signal"></i>
+                <i class="fa-solid fa-wifi"></i>
+                <i class="fa-solid fa-battery-full"></i>
+            </div>
+        </div>
+
+        <!-- Header Section with Org Branding & Global Filter -->
+        <div class="px-5 pt-2 pb-3 space-y-3 z-10 bg-[#1d2e26] border-b border-[#2d473a]/50">
+            <div class="flex justify-between items-center">
+                <div>
+                    <span class="text-[10px] tracking-widest uppercase px-2.5 py-1 rounded-full bg-[#2a4336] text-[#86cfa7] font-bold">SPA Portal</span>
+                    <h1 class="text-2xl font-extrabold text-white tracking-tight mt-0.5">GreenGen Org</h1>
+                </div>
+                <button onclick="openDrawer('notification', {title: 'Notifikasi Organisasi'})" class="relative w-10 h-10 rounded-2xl bg-[#2a4336] flex items-center justify-center text-white shadow-md hover:bg-[#385948] transition">
+                    <i class="fa-regular fa-bell"></i>
+                    <span class="absolute -top-1 -right-1 bg-[#e76f51] text-white font-bold text-[10px] w-4 h-4 rounded-full flex items-center justify-center">3</span>
+                </button>
+            </div>
+
+            <!-- Global Search & Angkatan Filter Bar -->
+            <div class="flex space-x-2">
+                <div class="relative flex-1">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-[#779986] text-xs"></i>
+                    <input type="text" id="searchInput" onkeyup="filterContent()" placeholder="Cari di organisasi..." class="w-full bg-[#2a4336] text-white placeholder-[#779986] text-xs rounded-xl pl-9 pr-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-[#86cfa7] transition">
+                </div>
+                <select id="angkatanSelect" onchange="changeAngkatan(this.value)" class="bg-[#2a4336] text-emerald-300 text-xs font-semibold rounded-xl px-3 py-2.5 outline-none border border-[#385948] cursor-pointer">
+                    <option value="2026">Angkatan 2026</option>
+                    <option value="2025">Angkatan 2025</option>
+                    <option value="2024">Angkatan 2024</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="main-content" class="flex-1 overflow-y-auto no-scrollbar pb-28 pt-4 px-5 space-y-6">
+            
+            <!-- TAB 1: HOME (CAROUSEL SHOWCASE SUMMARY) -->
+            <div id="tab-home" class="tab-content space-y-6">
+
+                <!-- Hero Profile Banner -->
+                <div class="bg-gradient-to-br from-[#2a4336] to-[#365746] rounded-3xl p-5 shadow-xl relative overflow-hidden border border-[#426b56]">
+                    <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-[#4c7a62] rounded-full opacity-20 pointer-events-none"></div>
+                    <span class="bg-[#121c17]/60 backdrop-blur-md text-[#86cfa7] text-[10px] font-bold px-3 py-1 rounded-full">Overview 2026</span>
+                    <h2 class="text-lg font-bold tracking-tight text-white mt-2 mb-1">Daya Cipta & Keberlanjutan</h2>
+                    <p class="text-xs text-[#b0c8bb] mb-4 leading-relaxed">Satu wadah kolaborasi antar-angkatan dengan transparansi & struktur terstruktur.</p>
+                    <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                        <div class="bg-[#1d2e26]/80 p-2 rounded-xl border border-[#385948]">
+                            <p class="font-extrabold text-emerald-400 text-sm">45+</p>
+                            <p class="text-[10px] text-[#8da698]">Anggota</p>
+                        </div>
+                        <div class="bg-[#1d2e26]/80 p-2 rounded-xl border border-[#385948]">
+                            <p class="font-extrabold text-emerald-400 text-sm">18</p>
+                            <p class="text-[10px] text-[#8da698]">Kegiatan</p>
+                        </div>
+                        <div class="bg-[#1d2e26]/80 p-2 rounded-xl border border-[#385948]">
+                            <p class="font-extrabold text-emerald-400 text-sm">100%</p>
+                            <p class="text-[10px] text-[#8da698]">Transparan</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CAROUSEL 1: ANGGOTA (BPH / STRUCTURED) -->
+                <div>
+                    <div class="flex justify-between items-center mb-3">
+                        <div>
+                            <h2 class="text-base font-bold text-white flex items-center gap-2">
+                                <span>Pengurus & Anggota</span>
+                                <span class="text-[10px] bg-[#2a4336] text-[#86cfa7] px-2 py-0.5 rounded-md font-normal" id="home-angkatan-tag">2026</span>
+                            </h2>
+                            <p class="text-[11px] text-[#8da698]">Struktur pimpinan & jajaran anggota</p>
+                        </div>
+                        <button onclick="switchTab('members')" class="text-xs text-[#86cfa7] font-semibold hover:underline">Semua</button>
+                    </div>
+
+                    <div class="flex overflow-x-auto space-x-3.5 no-scrollbar carousel-container py-1" id="carousel-home-members">
+                        <!-- Populated dynamically via JavaScript -->
+                    </div>
+                </div>
+
+                <!-- CAROUSEL 2: KEGIATAN (BY CATEGORY) -->
+                <div>
+                    <div class="flex justify-between items-center mb-3">
+                        <div>
+                            <h2 class="text-base font-bold text-white">Program & Kegiatan</h2>
+                            <p class="text-[11px] text-[#8da698]">Kategori Sosial, Akademik, & Bonding</p>
+                        </div>
+                        <button onclick="switchTab('events')" class="text-xs text-[#86cfa7] font-semibold hover:underline">Semua</button>
+                    </div>
+
+                    <div class="flex overflow-x-auto space-x-3.5 no-scrollbar carousel-container py-1" id="carousel-home-events">
+                        <!-- Populated dynamically via JavaScript -->
+                    </div>
+                </div>
+
+                <!-- CAROUSEL 3: KEUANGAN HIGHLIGHTS -->
+                <div>
+                    <div class="flex justify-between items-center mb-3">
+                        <div>
+                            <h2 class="text-base font-bold text-white">Ringkasan Kas</h2>
+                            <p class="text-[11px] text-[#8da698]">Laporan pemasukan & pengeluaran</p>
+                        </div>
+                        <button onclick="switchTab('finance')" class="text-xs text-[#86cfa7] font-semibold hover:underline">Detail</button>
+                    </div>
+
+                    <div class="flex overflow-x-auto space-x-3.5 no-scrollbar carousel-container py-1">
+                        <div class="min-w-[190px] bg-gradient-to-br from-[#2a4336] to-[#21352a] p-4 rounded-2xl border border-[#385948] flex flex-col justify-between">
+                            <div>
+                                <span class="text-[10px] text-[#8da698] uppercase font-bold tracking-wider">Saldo Kas Aktif</span>
+                                <h3 class="text-lg font-extrabold text-white mt-1">Rp 18.450.000</h3>
+                            </div>
+                            <span class="text-[10px] text-emerald-400 mt-3 font-semibold"><i class="fa-solid fa-arrow-up mr-1"></i>+15% dari bulan lalu</span>
+                        </div>
+                        <div class="min-w-[190px] bg-gradient-to-br from-[#2a4336] to-[#21352a] p-4 rounded-2xl border border-[#385948] flex flex-col justify-between">
+                            <div>
+                                <span class="text-[10px] text-[#8da698] uppercase font-bold tracking-wider">Pemasukan Iuran</span>
+                                <h3 class="text-lg font-extrabold text-white mt-1">Rp 12.200.000</h3>
+                            </div>
+                            <span class="text-[10px] text-blue-300 mt-3 font-semibold">Tercapai 92% target</span>
+                        </div>
+                        <div class="min-w-[190px] bg-gradient-to-br from-[#2a4336] to-[#21352a] p-4 rounded-2xl border border-[#385948] flex flex-col justify-between">
+                            <div>
+                                <span class="text-[10px] text-[#8da698] uppercase font-bold tracking-wider">Pengeluaran Program</span>
+                                <h3 class="text-lg font-extrabold text-white mt-1">Rp 6.150.000</h3>
+                            </div>
+                            <span class="text-[10px] text-orange-300 mt-3 font-semibold">4 Kegiatan terlaksana</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- TAB 2: MEMBERS (STRUCTURED BY LEVEL) -->
+            <div id="tab-members" class="tab-content hidden space-y-4">
+                <div class="flex justify-between items-center border-b border-[#2d473a] pb-3">
+                    <div>
+                        <h2 class="text-lg font-bold text-white">Struktur Anggota</h2>
+                        <p class="text-xs text-[#8da698]">Hirarki kepengurusan & jajaran anggota</p>
+                    </div>
+                    <span id="members-count-badge" class="text-xs bg-[#2a4336] text-[#86cfa7] px-3 py-1 rounded-full font-bold">45 Anggota</span>
+                </div>
+
+                <!-- Sub-Filter & Modern View Switcher -->
+                <div class="flex flex-col space-y-3">
+                    <!-- Level Filter Pills -->
+                    <div class="flex space-x-2 overflow-x-auto no-scrollbar pb-1">
+                        <button onclick="filterMemberLevel('all')" class="member-level-btn px-3 py-1.5 bg-[#86cfa7] text-[#121c17] rounded-xl text-xs font-bold transition whitespace-nowrap">Semua Level</button>
+                        <button onclick="filterMemberLevel('atas')" class="member-level-btn px-3 py-1.5 bg-[#2a4336] text-white rounded-xl text-xs font-semibold hover:bg-[#385948] transition whitespace-nowrap">Struktur Atas (BPH)</button>
+                        <button onclick="filterMemberLevel('menengah')" class="member-level-btn px-3 py-1.5 bg-[#2a4336] text-white rounded-xl text-xs font-semibold hover:bg-[#385948] transition whitespace-nowrap">Struktur Menengah</button>
+                        <button onclick="filterMemberLevel('bawah')" class="member-level-btn px-3 py-1.5 bg-[#2a4336] text-white rounded-xl text-xs font-semibold hover:bg-[#385948] transition whitespace-nowrap">Struktur Bawah</button>
+                        <button onclick="filterMemberLevel('anggota')" class="member-level-btn px-3 py-1.5 bg-[#2a4336] text-white rounded-xl text-xs font-semibold hover:bg-[#385948] transition whitespace-nowrap">Anggota Umum</button>
+                    </div>
+
+                    <!-- View Mode Toggle Bar (Carousel / Card / Compact Instagram) -->
+                    <div class="flex justify-between items-center bg-[#18261f] p-1.5 rounded-2xl border border-[#2d473a]">
+                        <span class="text-[10px] text-[#8da698] font-bold uppercase tracking-wider pl-2">Mode Tampilan</span>
+                        <div class="flex space-x-1 bg-[#2a4336] p-1 rounded-xl">
+                            <button onclick="setMemberViewMode('carousel')" id="btn-member-carousel" title="Carousel View" class="w-7 h-7 rounded-lg flex items-center justify-center text-xs text-white bg-[#385948] shadow transition">
+                                <i class="fa-solid fa-[#fa-arrows-left-right] fa-sliders"></i>
+                            </button>
+                            <button onclick="setMemberViewMode('card')" id="btn-member-card" title="Standard Card View" class="w-7 h-7 rounded-lg flex items-center justify-center text-xs text-[#8da698] hover:text-white transition">
+                                <i class="fa-solid fa-list-ul"></i>
+                            </button>
+                            <button onclick="setMemberViewMode('compact')" id="btn-member-compact" title="Compact Instagram Grid View" class="w-7 h-7 rounded-lg flex items-center justify-center text-xs text-[#8da698] hover:text-white transition">
+                                <i class="fa-solid fa-table-cells"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Structured Members Container -->
+                <div id="members-structured-container" class="space-y-4">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+
+            <!-- TAB 3: EVENTS (BY CATEGORIES: SOSIAL, AKADEMIK, BONDING) -->
+            <div id="tab-events" class="tab-content hidden space-y-4">
+                <div class="flex justify-between items-center border-b border-[#2d473a] pb-3">
+                    <div>
+                        <h2 class="text-lg font-bold text-white">Program & Kegiatan</h2>
+                        <p class="text-xs text-[#8da698]">Kategori Sosial, Akademik, dan Bonding</p>
+                    </div>
+                </div>
+
+                <!-- Category Pills & View Mode Toggle Bar -->
+                <div class="flex flex-col space-y-3">
+                    <!-- Category Pills Filter -->
+                    <div class="flex space-x-2">
+                        <button onclick="filterEventCat('all')" class="event-cat-btn px-3 py-1.5 bg-[#86cfa7] text-[#121c17] rounded-xl text-xs font-bold transition">Semua</button>
+                        <button onclick="filterEventCat('Sosial')" class="event-cat-btn px-3 py-1.5 bg-[#2a4336] text-white rounded-xl text-xs font-semibold hover:bg-[#385948] transition">Sosial</button>
+                        <button onclick="filterEventCat('Akademik')" class="event-cat-btn px-3 py-1.5 bg-[#2a4336] text-white rounded-xl text-xs font-semibold hover:bg-[#385948] transition">Akademik</button>
+                        <button onclick="filterEventCat('Bonding')" class="event-cat-btn px-3 py-1.5 bg-[#2a4336] text-white rounded-xl text-xs font-semibold hover:bg-[#385948] transition">Bonding</button>
+                    </div>
+
+                    <!-- View Mode Toggle Bar for Events -->
+                    <div class="flex justify-between items-center bg-[#18261f] p-1.5 rounded-2xl border border-[#2d473a]">
+                        <span class="text-[10px] text-[#8da698] font-bold uppercase tracking-wider pl-2">Mode Tampilan</span>
+                        <div class="flex space-x-1 bg-[#2a4336] p-1 rounded-xl">
+                            <button onclick="setEventViewMode('carousel')" id="btn-event-carousel" title="Carousel View" class="w-7 h-7 rounded-lg flex items-center justify-center text-xs text-[#8da698] hover:text-white transition">
+                                <i class="fa-solid fa-sliders"></i>
+                            </button>
+                            <button onclick="setEventViewMode('card')" id="btn-event-card" title="Standard Card View" class="w-7 h-7 rounded-lg flex items-center justify-center text-xs text-white bg-[#385948] shadow transition">
+                                <i class="fa-solid fa-list-ul"></i>
+                            </button>
+                            <button onclick="setEventViewMode('compact')" id="btn-event-compact" title="Compact Instagram Grid View" class="w-7 h-7 rounded-lg flex items-center justify-center text-xs text-[#8da698] hover:text-white transition">
+                                <i class="fa-solid fa-table-cells"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Event List Container -->
+                <div id="events-list-container" class="space-y-3">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+
+            <!-- TAB 4: FINANCE -->
+            <div id="tab-finance" class="tab-content hidden space-y-5">
+                <div class="border-b border-[#2d473a] pb-3">
+                    <h2 class="text-lg font-bold text-white">Laporan Keuangan SPA</h2>
+                    <p class="text-xs text-[#8da698]">Transparansi kas & pembukuan periodik</p>
+                </div>
+
+                <!-- Finance Overview Cards -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-[#2a4336] p-4 rounded-2xl border border-[#385948]">
+                        <p class="text-[10px] text-[#8da698] font-bold uppercase">Total Masuk</p>
+                        <h4 class="text-base font-extrabold text-emerald-400 mt-1">Rp 24.500.000</h4>
+                    </div>
+                    <div class="bg-[#2a4336] p-4 rounded-2xl border border-[#385948]">
+                        <p class="text-[10px] text-[#8da698] font-bold uppercase">Total Keluar</p>
+                        <h4 class="text-base font-extrabold text-rose-400 mt-1">Rp 6.050.000</h4>
+                    </div>
+                </div>
+
+                <!-- Transaction Log -->
+                <div class="bg-[#2a4336] rounded-2xl p-4 border border-[#385948] space-y-3">
+                    <div class="flex justify-between items-center mb-1">
+                        <h3 class="font-bold text-white text-xs">Jurnal Transaksi Terakhir</h3>
+                        <span class="text-[10px] text-[#86cfa7]">Real-time</span>
+                    </div>
+
+                    <div id="finance-logs-container" class="space-y-2">
+                        <!-- Dynamic items -->
+                    </div>
+                </div>
+
+                <button onclick="openDrawer('finance-report', {title: 'Laporan Keuangan Lengkap'})" class="w-full py-3 bg-[#385948] hover:bg-[#456e5a] text-white font-bold rounded-2xl shadow-lg transition text-xs flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                    <span>Buka Lembar Laporan Lengkap</span>
+                </button>
+            </div>
+
+        </div>
+
+        <div class="absolute bottom-0 left-0 right-0 bg-[#121c17]/95 backdrop-blur-md border-t border-[#2d473a] px-6 py-3 flex justify-between items-center z-30 shadow-2xl">
+            <button onclick="switchTab('home')" id="nav-home" class="text-white flex flex-col items-center space-y-1 transition">
+                <i class="fa-solid fa-house text-base"></i>
+                <span class="text-[10px] font-semibold">Beranda</span>
+                <div class="w-1.5 h-1.5 bg-white rounded-full"></div>
+            </button>
+            <button onclick="switchTab('members')" id="nav-members" class="text-[#779986] hover:text-white flex flex-col items-center space-y-1 transition">
+                <i class="fa-solid fa-users text-base"></i>
+                <span class="text-[10px] font-semibold">Anggota</span>
+                <div class="w-1.5 h-1.5 bg-transparent rounded-full"></div>
+            </button>
+            <button onclick="switchTab('events')" id="nav-events" class="text-[#779986] hover:text-white flex flex-col items-center space-y-1 transition">
+                <i class="fa-solid fa-calendar-days text-base"></i>
+                <span class="text-[10px] font-semibold">Kegiatan</span>
+                <div class="w-1.5 h-1.5 bg-transparent rounded-full"></div>
+            </button>
+            <button onclick="switchTab('finance')" id="nav-finance" class="text-[#779986] hover:text-white flex flex-col items-center space-y-1 transition">
+                <i class="fa-solid fa-wallet text-base"></i>
+                <span class="text-[10px] font-semibold">Keuangan</span>
+                <div class="w-1.5 h-1.5 bg-transparent rounded-full"></div>
+            </button>
+        </div>
+
+        <!-- BOTTOM DRAWER / INTERACTIVE BOTTOM SHEET -->
+        <div id="drawer-backdrop" onclick="closeDrawer()" class="absolute inset-0 bg-black/70 z-40 transition-opacity duration-300 opacity-0 pointer-events-none"></div>
+        <div id="bottom-drawer" class="absolute bottom-0 left-0 right-0 bg-[#1d2e26] rounded-t-[32px] p-6 max-h-[85vh] flex flex-col z-50 transform translate-y-full transition-transform duration-300 border-t border-[#385948] shadow-2xl">
+            
+            <!-- Handle indicator for drawer feel -->
+            <div class="w-12 h-1.5 bg-[#385948] rounded-full mx-auto mb-4 cursor-pointer" onclick="closeDrawer()"></div>
+
+            <!-- Drawer Header -->
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-[#2d473a]">
+                <h3 id="drawer-title" class="text-base font-bold text-white">Detail Info</h3>
+                <button onclick="closeDrawer()" class="w-7 h-7 rounded-full bg-[#2a4336] text-white flex items-center justify-center hover:bg-[#385948] transition">
+                    <i class="fa-solid fa-xmark text-xs"></i>
+                </button>
+            </div>
+            
+            <!-- Drawer Body Scrollable Content -->
+            <div id="drawer-body" class="space-y-4 overflow-y-auto no-scrollbar pb-6 text-xs text-[#d0e0d6]">
+                <!-- Dynamic Content loaded here -->
+            </div>
+        </div>
+
+        <!-- Notification Toast -->
+        <div id="toast" class="absolute top-14 left-1/2 transform -translate-x-1/2 bg-[#2a4336] text-white px-4 py-2.5 rounded-2xl shadow-2xl z-50 flex items-center space-x-2.5 opacity-0 pointer-events-none transition-all duration-300 border border-[#385948]">
+            <i class="fa-solid fa-circle-check text-emerald-400 text-xs"></i>
+            <span id="toast-message" class="text-xs font-semibold">Notifikasi</span>
+        </div>
+
+    </div>
+
+    <script>
+        // Data Store Mockup accommodating criteria
+        const currentYear = "2026";
+        let activeAngkatan = "2026";
+
+        // Active View Modes State
+        let currentMemberViewMode = 'carousel'; // 'carousel', 'card', 'compact'
+        let currentEventViewMode = 'card';       // 'carousel', 'card', 'compact'
+        let currentMemberFilterLevel = 'all';
+        let currentEventCategory = 'all';
+
+        // Structured Organizational Data
+        const orgData = {
+            "2026": {
+                members: {
+                    atas: [
+                        { id: 'm1', name: 'Sarah Amalia', role: 'Ketua Umum', dept: 'Teknik Lingkungan', img: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80', level: 'Struktur Atas (BPH)', desc: 'Penanggung jawab utama arah strategis & sinergi antar divisi.' },
+                        { id: 'm2', name: 'Rizky Pratama', role: 'Wakil Ketua', dept: 'Sistem Informasi', img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80', level: 'Struktur Atas (BPH)', desc: 'Pengawas operasional internal dan efisiensi program kerja.' },
+                        { id: 'm3', name: 'Nabila Putri', role: 'Sekretaris Jenderal', dept: 'Administrasi Bisnis', img: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&auto=format&fit=crop&q=80', level: 'Struktur Atas (BPH)', desc: 'Pengelola kearsipan, legalitas, dan tata kelola organisasi.' },
+                        { id: 'm4', name: 'Dimas Anggara', role: 'Bendahara Umum', dept: 'Akuntansi', img: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=300&auto=format&fit=crop&q=80', level: 'Struktur Atas (BPH)', desc: 'Pengelola keuangan utama, kas, dan akuntabilitas keuangan.' },
+                        { id: 'm5', name: 'Alifia Zahra', role: 'Internal Supervisor', dept: 'Psikologi', img: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=300&auto=format&fit=crop&q=80', level: 'Struktur Atas (BPH)', desc: 'Evaluator kinerja pengurus dan harmonisasi tim.' }
+                    ],
+                    menengah: [
+                        { id: 'm6', name: 'Budi Santoso', role: 'Kadiv Humas & Relasi', dept: 'Ilmu Komunikasi', img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80', level: 'Struktur Menengah', desc: 'Penanggung jawab komunikasi publik dan kemitraan eksternal.' },
+                        { id: 'm7', name: 'Dewi Lestari', role: 'Kadiv Program & Acara', dept: 'Manajemen', img: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&auto=format&fit=crop&q=80', level: 'Struktur Menengah', desc: 'Perancang eksekusi kegiatan sosial, akademik, dan bonding.' },
+                        { id: 'm8', name: 'Fikri Haikal', role: 'Kadiv Medkominfo', dept: 'Desain Komunikasi Visual', img: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=300&auto=format&fit=crop&q=80', level: 'Struktur Menengah', desc: 'Kepala publikasi media sosial dan branding visual.' }
+                    ],
+                    bawah: [
+                        { id: 'm9', name: 'Siti Rahma', role: 'Staff Ahli Humas', dept: 'Ilmu Komunikasi', img: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300&auto=format&fit=crop&q=80', level: 'Struktur Bawah', desc: 'Pelaksana hubungan lapangan dan koordinasi media partnership.' },
+                        { id: 'm10', name: 'Andi Wijaya', role: 'Staff Kreatif', dept: 'Informatika', img: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&auto=format&fit=crop&q=80', level: 'Struktur Bawah', desc: 'Desainer grafis & pengembang materi promosi visual.' }
+                    ],
+                    anggota: Array.from({ length: 12 }, (_, i) => ({
+                        id: `m_gen_${i+1}`,
+                        name: `Anggota Aktif #${i+1}`,
+                        role: 'Anggota Reguler',
+                        dept: ['Informatika', 'Sipil', 'Hukum', 'Kedokteran'][i % 4],
+                        img: `https://images.unsplash.com/photo-${1530000000000 + (i*10000)}?w=300&auto=format&fit=crop&q=80`,
+                        level: 'Anggota Umum',
+                        desc: 'Anggota aktif berpartisipasi dalam program kerja angkatan 2026.'
+                    }))
+                },
+                events: [
+                    { id: 'e1', title: 'Green Earth: Penanaman Pohon', cat: 'Sosial', date: '14 Feb 2026', img: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=400&auto=format&fit=crop&q=80', desc: 'Aksi sosial penanaman 1000 pohon di pesisir bersama warga lokal.', detail: 'Diikuti oleh 120 partisipan dari 3 angkatan. Anggaran terealisasi Rp 3.500.000.' },
+                    { id: 'e2', title: 'Simposium Inovasi Hijau', cat: 'Akademik', date: '28 Mar 2026', img: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=400&auto=format&fit=crop&q=80', desc: 'Webinar dan kompetisi karya tulis ilmiah mahasiswa.', detail: 'Menghadirkan 3 pembicara nasional dan 15 tim finalis karya ilmiah.' },
+                    { id: 'e3', title: 'Malam Keakraban Angkatan', cat: 'Bonding', date: '10 Apr 2026', img: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=400&auto=format&fit=crop&q=80', desc: 'Kegiatan keakraban internal untuk mempererat hubungan.', detail: 'Acara keakraban camp & BBQ malam di area pegunungan.' }
+                ],
+                finance: [
+                    { title: 'Sponsorship Utama Mandiri', type: 'in', amount: 'Rp 10.000.000', date: '02 Feb 2026' },
+                    { title: 'Pembelian Bibit & Pupuk', type: 'out', amount: 'Rp 3.500.000', date: '12 Feb 2026' },
+                    { title: 'Iuran Kas Rutin Angkatan', type: 'in', amount: 'Rp 2.200.000', date: '20 Feb 2026' }
+                ]
+            },
+            "2025": {
+                members: {
+                    atas: [
+                        { id: 'm25_1', name: 'Bayu Perkasa', role: 'Demisioner Ketua', dept: 'Teknik Mesin', img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80', level: 'Struktur Atas (BPH)', desc: 'Penasihat kepengurusan angkatan 2025.' }
+                    ],
+                    menengah: [],
+                    bawah: [],
+                    anggota: []
+                },
+                events: [
+                    { id: 'e25_1', title: 'Seminar Riset Lingkungan', cat: 'Akademik', date: '15 Nov 2025', img: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=400&auto=format&fit=crop&q=80', desc: 'Seminar hasil riset daur ulang limbah.', detail: 'Dokumentasi riset terpublikasi secara ilmiah.' }
+                ],
+                finance: []
+            },
+            "2024": {
+                members: { atas: [], menengah: [], bawah: [], anggota: [] },
+                events: [],
+                finance: []
+            }
+        };
+
+        // Render Functions
+        function initApp() {
+            renderHomeCarousels();
+            renderStructuredMembers(currentMemberFilterLevel);
+            renderEventsList(currentEventCategory);
+            renderFinanceLogs();
+        }
+
+        function changeAngkatan(val) {
+            activeAngkatan = val;
+            const tag = document.getElementById('home-angkatan-tag');
+            if(tag) tag.innerText = val;
+            showToast(`Menampilkan data ${val}`);
+            initApp();
+        }
+
+        function setMemberViewMode(mode) {
+            currentMemberViewMode = mode;
+            ['carousel', 'card', 'compact'].forEach(m => {
+                const btn = document.getElementById(`btn-member-${m}`);
+                if (!btn) return;
+                if (m === mode) {
+                    btn.className = "w-7 h-7 rounded-lg flex items-center justify-center text-xs text-white bg-[#385948] shadow transition";
+                } else {
+                    btn.className = "w-7 h-7 rounded-lg flex items-center justify-center text-xs text-[#8da698] hover:text-white transition";
+                }
+            });
+            renderStructuredMembers(currentMemberFilterLevel);
+        }
+
+        function setEventViewMode(mode) {
+            currentEventViewMode = mode;
+            ['carousel', 'card', 'compact'].forEach(m => {
+                const btn = document.getElementById(`btn-event-${m}`);
+                if (!btn) return;
+                if (m === mode) {
+                    btn.className = "w-7 h-7 rounded-lg flex items-center justify-center text-xs text-white bg-[#385948] shadow transition";
+                } else {
+                    btn.className = "w-7 h-7 rounded-lg flex items-center justify-center text-xs text-[#8da698] hover:text-white transition";
+                }
+            });
+            renderEventsList(currentEventCategory);
+        }
+
+        function renderHomeCarousels() {
+            const data = orgData[activeAngkatan] || orgData["2026"];
+            
+            // Render Members Carousel (Summary Atas & Menengah)
+            const memberCarousel = document.getElementById('carousel-home-members');
+            const topMembers = [...(data.members.atas || []), ...(data.members.menengah || [])];
+            
+            if(topMembers.length === 0) {
+                memberCarousel.innerHTML = `<p class="text-xs text-[#8da698] p-2">Tidak ada data untuk angkatan ini.</p>`;
+            } else {
+                memberCarousel.innerHTML = topMembers.map(m => `
+                    <div onclick="openDrawer('member', '${m.id}')" class="min-w-[160px] max-w-[160px] bg-[#2a4336] rounded-2xl p-3 shadow-lg border border-[#385948] cursor-pointer hover:border-[#86cfa7] transition flex flex-col justify-between">
+                        <div>
+                            <div class="h-28 rounded-xl overflow-hidden mb-2 bg-[#1d2e26]">
+                                <img src="${m.img}" class="w-full h-full object-cover" alt="${m.name}" onerror="this.src='https://placehold.co/200x200/2a4336/ffffff?text=User'">
+                            </div>
+                            <h3 class="font-bold text-white text-xs truncate">${m.name}</h3>
+                            <p class="text-[10px] text-[#86cfa7] truncate font-medium">${m.role}</p>
+                        </div>
+                        <div class="mt-2 text-[9px] bg-[#1d2e26] text-[#8da698] px-2 py-1 rounded-md flex justify-between items-center">
+                            <span>Detail</span>
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Render Events Carousel
+            const eventCarousel = document.getElementById('carousel-home-events');
+            if((data.events || []).length === 0) {
+                eventCarousel.innerHTML = `<p class="text-xs text-[#8da698] p-2">Tidak ada kegiatan tercatat.</p>`;
+            } else {
+                eventCarousel.innerHTML = data.events.map(e => `
+                    <div onclick="openDrawer('event', '${e.id}')" class="min-w-[200px] max-w-[200px] bg-[#2a4336] rounded-2xl p-3 shadow-lg border border-[#385948] cursor-pointer hover:border-[#86cfa7] transition flex flex-col justify-between">
+                        <div>
+                            <div class="h-24 rounded-xl overflow-hidden mb-2 relative bg-[#1d2e26]">
+                                <img src="${e.img}" class="w-full h-full object-cover" alt="${e.title}" onerror="this.src='https://placehold.co/200x200/2a4336/ffffff?text=Event'">
+                                <span class="absolute top-2 left-2 bg-[#121c17]/80 backdrop-blur-md text-[#86cfa7] text-[9px] font-bold px-2 py-0.5 rounded-md">${e.cat}</span>
+                            </div>
+                            <h3 class="font-bold text-white text-xs leading-tight mb-1 line-clamp-2">${e.title}</h3>
+                            <p class="text-[10px] text-[#8da698]"><i class="fa-regular fa-calendar mr-1"></i>${e.date}</p>
+                        </div>
+                        <button class="mt-2 w-full py-1.5 bg-[#385948] hover:bg-[#456e5a] text-white rounded-xl text-[10px] font-semibold transition">
+                            Bottom Drawer Info
+                        </button>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function renderStructuredMembers(filterLevel = 'all') {
+            currentMemberFilterLevel = filterLevel;
+            const container = document.getElementById('members-structured-container');
+            const data = orgData[activeAngkatan] || orgData["2026"];
+            const m = data.members;
+
+            // Count badge
+            const total = (m.atas?.length || 0) + (m.menengah?.length || 0) + (m.bawah?.length || 0) + (m.anggota?.length || 0);
+            document.getElementById('members-count-badge').innerText = `${total} Anggota`;
+
+            let html = '';
+
+            const createSection = (title, list, badgeColor) => {
+                if (!list || list.length === 0) return '';
+                
+                let contentHtml = '';
+
+                if (currentMemberViewMode === 'carousel') {
+                    contentHtml = `
+                        <div class="flex overflow-x-auto space-x-3.5 no-scrollbar carousel-container py-1">
+                            ${list.map(item => `
+                                <div onclick="openDrawer('member', '${item.id}')" class="min-w-[150px] max-w-[150px] bg-[#2a4336] rounded-2xl p-3 shadow-lg border border-[#385948] cursor-pointer hover:border-[#86cfa7] transition flex flex-col justify-between">
+                                    <div>
+                                        <div class="h-28 rounded-xl overflow-hidden mb-2 bg-[#1d2e26]">
+                                            <img src="${item.img}" class="w-full h-full object-cover" alt="${item.name}" onerror="this.src='https://placehold.co/200x200/2a4336/ffffff?text=User'">
+                                        </div>
+                                        <h3 class="font-bold text-white text-xs truncate">${item.name}</h3>
+                                        <p class="text-[10px] text-[#86cfa7] truncate font-medium">${item.role}</p>
+                                    </div>
+                                    <div class="mt-2 text-[9px] bg-[#1d2e26] text-[#8da698] px-2 py-1 rounded-md flex justify-between items-center">
+                                        <span>Profile</span>
+                                        <i class="fa-solid fa-chevron-right"></i>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                } else if (currentMemberViewMode === 'card') {
+                    contentHtml = `
+                        <div class="space-y-2">
+                            ${list.map(item => `
+                                <div onclick="openDrawer('member', '${item.id}')" class="bg-[#2a4336] p-3 rounded-2xl flex items-center justify-between border border-[#385948] cursor-pointer hover:bg-[#325041] transition">
+                                    <div class="flex items-center space-x-3">
+                                        <img src="${item.img}" class="w-10 h-10 rounded-xl object-cover" alt="${item.name}" onerror="this.src='https://placehold.co/100x100/2a4336/ffffff?text=User'">
+                                        <div>
+                                            <h4 class="font-bold text-white text-xs">${item.name}</h4>
+                                            <p class="text-[10px] text-[#86cfa7]">${item.role} • ${item.dept}</p>
+                                        </div>
+                                    </div>
+                                    <i class="fa-solid fa-chevron-right text-xs text-[#8da698]"></i>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                } else if (currentMemberViewMode === 'compact') {
+                    // Instagram style compact grid view
+                    contentHtml = `
+                        <div class="grid grid-cols-3 gap-2">
+                            ${list.map(item => `
+                                <div onclick="openDrawer('member', '${item.id}')" class="group relative bg-[#2a4336] rounded-xl overflow-hidden aspect-square border border-[#385948] cursor-pointer shadow-md">
+                                    <img src="${item.img}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" alt="${item.name}" onerror="this.src='https://placehold.co/150x150/2a4336/ffffff?text=User'">
+                                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-1.5 flex flex-col justify-end">
+                                        <p class="text-[10px] font-bold text-white leading-tight truncate">${item.name}</p>
+                                        <p class="text-[8px] text-[#86cfa7] truncate">${item.role}</p>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="space-y-2">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-2 h-2 rounded-full ${badgeColor}"></span>
+                            <h3 class="text-xs font-bold text-white uppercase tracking-wider">${title} (${list.length})</h3>
+                        </div>
+                        ${contentHtml}
+                    </div>
+                `;
+            };
+
+            if (filterLevel === 'all' || filterLevel === 'atas') html += createSection('Struktur Atas (BPH)', m.atas, 'bg-emerald-400');
+            if (filterLevel === 'all' || filterLevel === 'menengah') html += createSection('Struktur Menengah (Koordinator)', m.menengah, 'bg-blue-400');
+            if (filterLevel === 'all' || filterLevel === 'bawah') html += createSection('Struktur Bawah (Staff)', m.bawah, 'bg-purple-400');
+            if (filterLevel === 'all' || filterLevel === 'anggota') html += createSection('Anggota Umum', m.anggota, 'bg-amber-400');
+
+            container.innerHTML = html || `<p class="text-xs text-[#8da698]">Data kosong untuk kategori ini.</p>`;
+        }
+
+        function filterMemberLevel(level) {
+            document.querySelectorAll('.member-level-btn').forEach(btn => {
+                btn.classList.remove('bg-[#86cfa7]', 'text-[#121c17]', 'font-bold');
+                btn.classList.add('bg-[#2a4336]', 'text-white', 'font-semibold');
+            });
+            event.target.classList.remove('bg-[#2a4336]', 'text-white', 'font-semibold');
+            event.target.classList.add('bg-[#86cfa7]', 'text-[#121c17]', 'font-bold');
+
+            renderStructuredMembers(level);
+        }
+
+        function renderEventsList(category = 'all') {
+            currentEventCategory = category;
+            const container = document.getElementById('events-list-container');
+            const data = orgData[activeAngkatan] || orgData["2026"];
+            let events = data.events || [];
+
+            if(category !== 'all') {
+                events = events.filter(e => e.cat.toLowerCase() === category.toLowerCase());
+            }
+
+            if(events.length === 0) {
+                container.innerHTML = `<p class="text-xs text-[#8da698]">Tidak ada kegiatan kategori ini.</p>`;
+                return;
+            }
+
+            if (currentEventViewMode === 'carousel') {
+                container.innerHTML = `
+                    <div class="flex overflow-x-auto space-x-3.5 no-scrollbar carousel-container py-1">
+                        ${events.map(e => `
+                            <div onclick="openDrawer('event', '${e.id}')" class="min-w-[200px] max-w-[200px] bg-[#2a4336] rounded-2xl p-3 shadow-lg border border-[#385948] cursor-pointer hover:border-[#86cfa7] transition flex flex-col justify-between">
+                                <div>
+                                    <div class="h-24 rounded-xl overflow-hidden mb-2 relative bg-[#1d2e26]">
+                                        <img src="${e.img}" class="w-full h-full object-cover" alt="${e.title}" onerror="this.src='https://placehold.co/200x200/2a4336/ffffff?text=Event'">
+                                        <span class="absolute top-2 left-2 bg-[#121c17]/80 backdrop-blur-md text-[#86cfa7] text-[9px] font-bold px-2 py-0.5 rounded-md">${e.cat}</span>
+                                    </div>
+                                    <h3 class="font-bold text-white text-xs leading-tight mb-1 line-clamp-2">${e.title}</h3>
+                                    <p class="text-[10px] text-[#8da698]"><i class="fa-regular fa-calendar mr-1"></i>${e.date}</p>
+                                </div>
+                                <button class="mt-2 w-full py-1.5 bg-[#385948] hover:bg-[#456e5a] text-white rounded-xl text-[10px] font-semibold transition">
+                                    Bottom Drawer Info
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } else if (currentEventViewMode === 'card') {
+                container.innerHTML = events.map(e => `
+                    <div onclick="openDrawer('event', '${e.id}')" class="bg-[#2a4336] p-3 rounded-2xl border border-[#385948] flex space-x-3 cursor-pointer hover:bg-[#325041] transition">
+                        <img src="${e.img}" class="w-16 h-16 rounded-xl object-cover" alt="${e.title}" onerror="this.src='https://placehold.co/150x150/2a4336/ffffff?text=Event'">
+                        <div class="flex-1">
+                            <span class="text-[9px] bg-[#1d2e26] text-[#86cfa7] font-bold px-2 py-0.5 rounded">${e.cat}</span>
+                            <h4 class="font-bold text-white text-xs mt-1 leading-snug">${e.title}</h4>
+                            <p class="text-[10px] text-[#8da698] mt-1"><i class="fa-regular fa-calendar mr-1"></i>${e.date}</p>
+                        </div>
+                    </div>
+                `).join('');
+            } else if (currentEventViewMode === 'compact') {
+                // Instagram style compact grid view for events
+                container.innerHTML = `
+                    <div class="grid grid-cols-2 gap-2.5">
+                        ${events.map(e => `
+                            <div onclick="openDrawer('event', '${e.id}')" class="group relative bg-[#2a4336] rounded-2xl overflow-hidden aspect-[4/3] border border-[#385948] cursor-pointer shadow-md">
+                                <img src="${e.img}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" alt="${e.title}" onerror="this.src='https://placehold.co/200x150/2a4336/ffffff?text=Event'">
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent p-2.5 flex flex-col justify-between">
+                                    <span class="self-start text-[8px] bg-[#121c17]/80 backdrop-blur-md text-[#86cfa7] font-bold px-2 py-0.5 rounded-md">${e.cat}</span>
+                                    <div>
+                                        <h4 class="text-xs font-bold text-white leading-tight line-clamp-1">${e.title}</h4>
+                                        <p class="text-[9px] text-[#8da698] mt-0.5">${e.date}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+        }
+
+        function filterEventCat(cat) {
+            document.querySelectorAll('.event-cat-btn').forEach(btn => {
+                btn.classList.remove('bg-[#86cfa7]', 'text-[#121c17]', 'font-bold');
+                btn.classList.add('bg-[#2a4336]', 'text-white', 'font-semibold');
+            });
+            event.target.classList.remove('bg-[#2a4336]', 'text-white', 'font-semibold');
+            event.target.classList.add('bg-[#86cfa7]', 'text-[#121c17]', 'font-bold');
+
+            renderEventsList(cat);
+        }
+
+        function renderFinanceLogs() {
+            const container = document.getElementById('finance-logs-container');
+            const data = orgData[activeAngkatan] || orgData["2026"];
+            const logs = data.finance || [];
+
+            if(logs.length === 0) {
+                container.innerHTML = `<p class="text-xs text-[#8da698]">Belum ada jurnal transaksi.</p>`;
+                return;
+            }
+
+            container.innerHTML = logs.map(f => `
+                <div class="flex justify-between items-center pb-2 border-b border-[#385948]/50 text-xs">
+                    <div>
+                        <p class="font-semibold text-white text-xs">${f.title}</p>
+                        <p class="text-[9px] text-[#8da698]">${f.date} • ${f.type === 'in' ? 'Pemasukan' : 'Pengeluaran'}</p>
+                    </div>
+                    <span class="font-bold text-xs ${f.type === 'in' ? 'text-emerald-400' : 'text-rose-400'}">
+                        ${f.type === 'in' ? '+' : '-'}${f.amount}
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        function openDrawer(type, idOrData) {
+            const backdrop = document.getElementById('drawer-backdrop');
+            const drawer = document.getElementById('bottom-drawer');
+            const titleEl = document.getElementById('drawer-title');
+            const bodyEl = document.getElementById('drawer-body');
+
+            const currentData = orgData[activeAngkatan] || orgData["2026"];
+
+            if (type === 'member') {
+                let member = null;
+                Object.values(currentData.members).forEach(list => {
+                    const found = list.find(m => m.id === idOrData);
+                    if(found) member = found;
+                });
+
+                if(member) {
+                    titleEl.innerText = "Detail Anggota Organisasi";
+                    bodyEl.innerHTML = `
+                        <div class="flex flex-col items-center text-center pt-2">
+                            <img src="${member.img}" class="w-20 h-20 rounded-2xl object-cover border-2 border-[#86cfa7] mb-3 shadow-lg" alt="${member.name}" onerror="this.src='https://placehold.co/150x150/2a4336/ffffff?text=User'">
+                            <h4 class="text-sm font-extrabold text-white">${member.name}</h4>
+                            <p class="text-xs text-[#86cfa7] font-semibold mt-0.5">${member.role}</p>
+                            <span class="text-[10px] bg-[#2a4336] text-[#8da698] px-2.5 py-1 rounded-full mt-2 font-medium">${member.level} • ${member.dept}</span>
+                            
+                            <div class="w-full bg-[#2a4336] p-4 rounded-2xl text-left mt-4 border border-[#385948] space-y-2">
+                                <p class="font-bold text-white text-xs">Deskripsi Peran & Kontribusi:</p>
+                                <p class="text-xs text-[#b0c8bb] leading-relaxed">${member.desc}</p>
+                            </div>
+
+                            <button onclick="showToast('Kontak terhubung dengan ${member.name}')" class="w-full py-3 bg-[#385948] hover:bg-[#456e5a] text-white font-bold rounded-xl mt-4 transition text-xs flex items-center justify-center space-x-2">
+                                <i class="fa-solid fa-envelope"></i>
+                                <span>Kirim Pesan Internal</span>
+                            </button>
+                        </div>
+                    `;
+                }
+            } else if (type === 'event') {
+                const eventItem = currentData.events.find(e => e.id === idOrData);
+                if(eventItem) {
+                    titleEl.innerText = "Detail Kegiatan Organisasi";
+                    bodyEl.innerHTML = `
+                        <div class="space-y-3 pt-1">
+                            <img src="${eventItem.img}" class="w-full h-36 rounded-2xl object-cover border border-[#385948]" alt="${eventItem.title}" onerror="this.src='https://placehold.co/300x150/2a4336/ffffff?text=Event'">
+                            <div>
+                                <span class="text-[9px] bg-[#2a4336] text-[#86cfa7] font-bold px-2 py-0.5 rounded">${eventItem.cat}</span>
+                                <h4 class="text-sm font-extrabold text-white mt-1">${eventItem.title}</h4>
+                                <p class="text-[10px] text-[#8da698] mt-0.5"><i class="fa-regular fa-calendar mr-1"></i>Pelaksanaan: ${eventItem.date}</p>
+                            </div>
+                            <div class="bg-[#2a4336] p-3.5 rounded-2xl border border-[#385948] space-y-1.5">
+                                <p class="font-bold text-white text-xs">Ringkasan Program:</p>
+                                <p class="text-xs text-[#b0c8bb] leading-relaxed">${eventItem.desc}</p>
+                                <hr class="border-[#385948] my-2">
+                                <p class="font-bold text-white text-xs">Detail & Dokumentasi:</p>
+                                <p class="text-xs text-[#b0c8bb] leading-relaxed">${eventItem.detail}</p>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else if (type === 'notification') {
+                titleEl.innerText = idOrData.title || "Notifikasi";
+                bodyEl.innerHTML = `
+                    <div class="space-y-2">
+                        <div class="bg-[#2a4336] p-3 rounded-xl border border-[#385948]">
+                            <p class="text-xs font-bold text-white">Rapat Pleno BPH Angkatan 2026</p>
+                            <p class="text-[10px] text-[#8da698] mt-1">Jumat pukul 19:30 WIB via Google Meet</p>
+                        </div>
+                        <div class="bg-[#2a4336] p-3 rounded-xl border border-[#385948]">
+                            <p class="text-xs font-bold text-white">Pengumpulan Laporan Kas Bulan Ini</p>
+                            <p class="text-[10px] text-[#8da698] mt-1">Batas akhir pengunggahan nota transaksi tanggal 28</p>
+                        </div>
+                    </div>
+                `;
+            } else if (type === 'finance-report') {
+                titleEl.innerText = idOrData.title || "Laporan Keuangan";
+                bodyEl.innerHTML = `
+                    <div class="space-y-3">
+                        <p class="text-xs text-[#b0c8bb]">Laporan keuangan resmi tercatat secara otomatis untuk transparansi seluruh anggota.</p>
+                        <div class="bg-[#2a4336] p-3 rounded-xl border border-[#385948] space-y-2">
+                            <div class="flex justify-between text-xs"><span class="text-[#8da698]">Saldo Awal</span><span class="font-bold text-white">Rp 2.000.000</span></div>
+                            <div class="flex justify-between text-xs"><span class="text-[#8da698]">Total Pemasukan</span><span class="font-bold text-emerald-400">Rp 22.500.000</span></div>
+                            <div class="flex justify-between text-xs"><span class="text-[#8da698]">Total Pengeluaran</span><span class="font-bold text-rose-400">Rp 6.050.000</span></div>
+                            <hr class="border-[#385948]">
+                            <div class="flex justify-between text-xs font-bold"><span class="text-white">Sisa Kas</span><span class="text-[#86cfa7]">Rp 18.450.000</span></div>
+                        </div>
+                        <button onclick="showToast('Unduh PDF Laporan...')" class="w-full py-2.5 bg-[#86cfa7] text-[#121c17] font-bold rounded-xl text-xs flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-download"></i>
+                            <span>Download Laporan PDF</span>
+                        </button>
+                    </div>
+                `;
+            }
+
+            // Show Drawer
+            backdrop.classList.remove('opacity-0', 'pointer-events-none');
+            drawer.classList.remove('translate-y-full');
+        }
+
+        function closeDrawer() {
+            const backdrop = document.getElementById('drawer-backdrop');
+            const drawer = document.getElementById('bottom-drawer');
+            backdrop.classList.add('opacity-0', 'pointer-events-none');
+            drawer.classList.add('translate-y-full');
+        }
+
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+
+            // Show active tab
+            const target = document.getElementById(`tab-${tabName}`);
+            if(target) target.classList.remove('hidden');
+
+            // Bottom Nav indicators
+            ['home', 'members', 'events', 'finance'].forEach(t => {
+                const btn = document.getElementById(`nav-${t}`);
+                if(!btn) return;
+                const dot = btn.querySelector('div');
+                if (t === tabName) {
+                    btn.classList.remove('text-[#779986]');
+                    btn.classList.add('text-white');
+                    if(dot) dot.classList.replace('bg-transparent', 'bg-white');
+                } else {
+                    btn.classList.add('text-[#779986]');
+                    btn.classList.remove('text-white');
+                    if(dot) dot.classList.replace('bg-white', 'bg-transparent');
+                }
+            });
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').innerText = message;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 2200);
+        }
+
+        function filterContent() {
+            const q = document.getElementById('searchInput').value.trim();
+            if(q.length > 2) {
+                showToast(`Filter kata kunci: "${q}"`);
+            }
+        }
+
+        // Initialize on Load
+        window.onload = function() {
+            initApp();
+        };
+    </script>
+</body>
+</html>
