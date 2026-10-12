@@ -1,158 +1,119 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../utils/supabase';
-import { orgData as fallbackStaticData } from '../data/orgData';
+import { orgData as staticOrgData } from '../data/orgData';
 import type { OrganizationYearData, Member, OrgEvent, Transaction } from '../types';
 
-export function useOrgData(activeAngkatan: string) {
+export const useOrgData = (selectedYear: string) => {
   const [data, setData] = useState<OrganizationYearData>(() => {
-    return fallbackStaticData[activeAngkatan] || {
-      name: 'GreenGen Org',
-      tagline: `Generasi ${activeAngkatan}`,
-      overview: { membersCount: 0, eventsCount: 0, transparency: '100%' },
-      members: { atas: [], menengah: [], bawah: [], anggota: [] },
-      events: [],
-      finance: { balance: 0, income: 0, expense: 0, transactions: [] }
-    };
+    return staticOrgData[selectedYear] || staticOrgData['2026'];
   });
-
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [isUsingSupabase, setIsUsingSupabase] = useState<boolean>(false);
 
-  const fetchByAngkatan = useCallback(async () => {
-    setIsLoading(true);
+  const fetchData = async () => {
     try {
-      // 1. Fetch Pengurus berdasarkan angkatan
-      const { data: membersRaw, error: mErr } = await supabase
-        .from('members')
-        .select('*')
-        .eq('org_id', activeAngkatan)
-        .order('created_at', { ascending: true });
+      setLoading(true);
 
-      if (mErr) throw mErr;
+      const [membersRes, eventsRes, transRes] = await Promise.all([
+        supabase
+          .from('members')
+          .select('*')
+          .eq('org_id', selectedYear)
+          .order('order_index', { ascending: true }),
+        supabase
+          .from('events')
+          .select('*')
+          .eq('org_id', selectedYear)
+          .order('date', { ascending: true }),
+        supabase
+          .from('transactions')
+          .select('*')
+          .eq('org_id', selectedYear)
+          .order('date', { ascending: false })
+      ]);
 
-      // 2. Fetch Kegiatan berdasarkan angkatan
-      const { data: eventsRaw, error: eErr } = await supabase
-        .from('events')
-        .select('*')
-        .eq('org_id', activeAngkatan)
-        .order('created_at', { ascending: false });
+      const dbMembers: Member[] = (membersRes.data || []).map(m => ({
+        id: m.id,
+        name: m.name,
+        role: m.role,
+        dept: m.dept,
+        img: m.img,
+        order_index: m.order_index ?? 99,
+        role_description: m.role_description,
+        instagram: m.instagram,
+        linkedin: m.linkedin
+      }));
 
-      if (eErr) throw eErr;
+      const dbEvents: OrgEvent[] = (eventsRes.data || []).map(e => ({
+        id: e.id,
+        title: e.title,
+        date: e.date,
+        category: e.category,
+        desc: e.desc,
+        status: e.status || 'upcoming'
+      }));
 
-      // 3. Fetch Transaksi Keuangan berdasarkan angkatan
-      const { data: txRaw, error: tErr } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('org_id', activeAngkatan)
-        .order('date', { ascending: false });
+      const dbTrans: Transaction[] = (transRes.data || []).map(t => ({
+        id: t.id,
+        desc: t.desc,
+        amount: Number(t.amount),
+        type: t.type,
+        date: t.date
+      }));
 
-      if (tErr) throw tErr;
-
-      // Jika ada data di salah satu tabel Supabase, pakai data Supabase murni
-      const hasSupabaseData = (membersRaw?.length || 0) > 0 || (eventsRaw?.length || 0) > 0 || (txRaw?.length || 0) > 0;
+      const hasSupabaseData = dbMembers.length > 0 || dbEvents.length > 0 || dbTrans.length > 0;
+      setIsUsingSupabase(hasSupabaseData);
 
       if (hasSupabaseData) {
-        setIsUsingSupabase(true);
-
-        const atas: Member[] = [];
-        const menengah: Member[] = [];
-        const bawah: Member[] = [];
-        const anggota: Member[] = [];
-
-        membersRaw?.forEach((m) => {
-          const item: Member = {
-            id: m.id,
-            name: m.name,
-            role: m.role,
-            dept: m.dept,
-            img: m.img || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300',
-            bio: m.bio || '',
-            email: m.email || '',
-            phone: m.phone || ''
-          };
-          if (m.tier === 'atas') atas.push(item);
-          else if (m.tier === 'menengah') menengah.push(item);
-          else if (m.tier === 'bawah') bawah.push(item);
-          else anggota.push(item);
-        });
-
-        const events: OrgEvent[] = (eventsRaw || []).map((e) => ({
-          id: e.id,
-          title: e.title,
-          cat: e.cat,
-          date: e.date,
-          time: e.time || '08:00 WIB',
-          location: e.location || 'Kampus',
-          img: e.img || 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=600',
-          desc: e.description || '',
-          attendees: e.attendees || 0
-        }));
-
-        const transactions: Transaction[] = (txRaw || []).map((t) => ({
-          id: t.id,
-          title: t.title,
-          category: t.category,
-          amount: Number(t.amount),
-          type: t.type,
-          date: t.date
-        }));
-
-        const income = transactions.filter(t => t.type === 'in').reduce((acc, cur) => acc + cur.amount, 0);
-        const expense = transactions.filter(t => t.type === 'out').reduce((acc, cur) => acc + cur.amount, 0);
+        const income = dbTrans.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
+        const expense = dbTrans.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+        const balance = income - expense;
 
         setData({
-          name: 'GreenGen Org',
-          tagline: `Generasi Angkatan ${activeAngkatan}`,
-          overview: {
-            membersCount: (membersRaw?.length || 0),
-            eventsCount: events.length,
-            transparency: '100%'
+          tagline: `Generasi Angkatan ${selectedYear}`,
+          about: `Informasi kepengurusan dan kegiatan resmi organisasi periode angkatan ${selectedYear}.`,
+          stats: {
+            membersCount: dbMembers.length,
+            eventsCount: dbEvents.length,
+            fundRaised: `Rp ${(balance / 1000000).toFixed(1)} jt`
           },
-          members: { atas, menengah, bawah, anggota },
-          events,
+          members: dbMembers,
+          events: dbEvents,
           finance: {
-            balance: income - expense,
             income,
             expense,
-            transactions
+            balance,
+            history: dbTrans
           }
         });
       } else {
-        // Jika belum ada data di Supabase untuk angkatan ini, gunakan template statis
-        setIsUsingSupabase(false);
-        const staticItem = fallbackStaticData[activeAngkatan] || {
-          name: 'GreenGen Org',
-          tagline: `Generasi Angkatan ${activeAngkatan}`,
-          overview: { membersCount: 0, eventsCount: 0, transparency: '100%' },
-          members: { atas: [], menengah: [], bawah: [], anggota: [] },
-          events: [],
-          finance: { balance: 0, income: 0, expense: 0, transactions: [] }
-        };
-        setData(staticItem);
+        const fallback = staticOrgData[selectedYear] || staticOrgData['2026'];
+        setData(fallback);
       }
     } catch (err) {
-      console.error('Error fetching Supabase data:', err);
+      console.error('Error fetching data from Supabase:', err);
+      const fallback = staticOrgData[selectedYear] || staticOrgData['2026'];
+      setData(fallback);
       setIsUsingSupabase(false);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, [activeAngkatan]);
+  };
 
   useEffect(() => {
-    fetchByAngkatan();
+    fetchData();
 
-    // Listen realtime changes untuk semua tabel
     const channel = supabase
-      .channel(`realtime-org-${activeAngkatan}`)
-      .on('postgres_changes', { event: '*', schema: 'public' }, () => {
-        fetchByAngkatan();
-      })
+      .channel('schema-db-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'members' }, () => fetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, () => fetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => fetchData())
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchByAngkatan, activeAngkatan]);
+  }, [selectedYear]);
 
-  return { data, isLoading, isUsingSupabase, refetch: fetchByAngkatan };
-}
+  return { data, loading, isUsingSupabase, refetch: fetchData };
+};

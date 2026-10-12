@@ -1,87 +1,91 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../utils/supabase';
-import { X, Plus } from 'lucide-react';
+import { X, User, Calendar, DollarSign, Upload, AlertCircle, Hash } from 'lucide-react';
 
-interface AdminInputModalProps {
+interface Props {
   isOpen: boolean;
   onClose: () => void;
-  defaultAngkatan: string;
   type: 'member' | 'event' | 'transaction';
+  defaultOrgId: string;
   onSuccess: () => void;
 }
 
-export const AdminInputModal: React.FC<AdminInputModalProps> = ({
+export const AdminInputModal: React.FC<Props> = ({
   isOpen,
   onClose,
-  defaultAngkatan,
   type,
+  defaultOrgId,
   onSuccess
 }) => {
-  const [angkatan, setAngkatan] = useState(defaultAngkatan);
-  const [loading, setLoading] = useState(false);
+  const [targetOrgId, setTargetOrgId] = useState(defaultOrgId);
+  const [availableOrgs, setAvailableOrgs] = useState<{ id: string; name: string }[]>([]);
+  const [categoriesList, setCategoriesList] = useState<string[]>([]);
+  const [deptList, setDeptList] = useState<string[]>([]);
+  const [rolesList, setRolesList] = useState<{ title: string; order_index: number; description?: string }[]>([]);
 
-  // Master Data Options
-  const [availableAngkatan, setAvailableAngkatan] = useState<string[]>([]);
-  const [departments, setDepartments] = useState<string[]>([]);
-  const [roles, setRoles] = useState<{ title: string; tier: string }[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
-
-  // Form Fields
+  // Member form state
   const [memberName, setMemberName] = useState('');
   const [memberRole, setMemberRole] = useState('');
+  const [memberOrderIndex, setMemberOrderIndex] = useState<number>(1);
   const [memberDept, setMemberDept] = useState('');
-  const [memberTier, setMemberTier] = useState('atas');
   const [memberImg, setMemberImg] = useState('');
+  const [memberRoleDesc, setMemberRoleDesc] = useState('');
 
+  // Event form state
   const [eventTitle, setEventTitle] = useState('');
-  const [eventCat, setEventCat] = useState('');
   const [eventDate, setEventDate] = useState('');
-  const [eventLocation, setEventLocation] = useState('');
+  const [eventCategory, setEventCategory] = useState('');
   const [eventDesc, setEventDesc] = useState('');
+  const [eventStatus, setEventStatus] = useState<'upcoming' | 'completed' | 'ongoing'>('upcoming');
 
-  const [txTitle, setTxTitle] = useState('');
-  const [txCat, setTxCat] = useState('Iuran');
+  // Transaction form state
+  const [txDesc, setTxDesc] = useState('');
   const [txAmount, setTxAmount] = useState('');
-  const [txType, setTxType] = useState<'in' | 'out'>('in');
+  const [txType, setTxType] = useState<'income' | 'expense'>('expense');
+  const [txDate, setTxDate] = useState(new Date().toISOString().split('T')[0]);
+
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
     if (isOpen) {
-      const loadMasters = async () => {
-        const { data: orgs } = await supabase.from('organizations').select('id').order('id', { ascending: false });
-        const { data: depts } = await supabase.from('master_departments').select('name').order('name');
-        const { data: rls } = await supabase.from('master_roles').select('title, tier').order('title');
-        const { data: cats } = await supabase.from('master_event_categories').select('name').order('name');
-
-        const orgList = orgs?.map((o) => o.id) || ['2026', '2025', '2024'];
-        setAvailableAngkatan(orgList);
-        if (!orgList.includes(angkatan) && orgList.length > 0) {
-          setAngkatan(orgList[0]);
-        }
-
-        const deptList = depts?.map((d) => d.name) || ['BPH'];
-        setDepartments(deptList);
-        setMemberDept(deptList[0] || 'BPH');
-
-        const roleList = rls || [{ title: 'Ketua Umum', tier: 'atas' }];
-        setRoles(roleList);
-        if (roleList.length > 0) {
-          setMemberRole(roleList[0].title);
-          setMemberTier(roleList[0].tier);
-        }
-
-        const catList = cats?.map((c) => c.name) || ['Lingkungan', 'Edukasi'];
-        setCategories(catList);
-        setEventCat(catList[0] || 'Lingkungan');
-      };
-      loadMasters();
+      setTargetOrgId(defaultOrgId);
+      loadMasterOptions();
     }
-  }, [isOpen]);
+  }, [isOpen, defaultOrgId]);
+
+  const loadMasterOptions = async () => {
+    try {
+      const [orgsRes, catRes, deptRes, roleRes] = await Promise.all([
+        supabase.from('organizations').select('id, name').order('id', { ascending: true }),
+        supabase.from('master_event_categories').select('name').order('name'),
+        supabase.from('master_departments').select('name').order('name'),
+        supabase.from('master_roles').select('title, order_index, description').order('order_index', { ascending: true })
+      ]);
+
+      if (orgsRes.data) setAvailableOrgs(orgsRes.data);
+      if (catRes.data) setCategoriesList(catRes.data.map(c => c.name));
+      if (deptRes.data) setDeptList(deptRes.data.map(d => d.name));
+      if (roleRes.data) {
+        setRolesList(roleRes.data);
+        if (roleRes.data.length > 0 && !memberRole) {
+          const first = roleRes.data[0];
+          setMemberRole(first.title);
+          setMemberOrderIndex(first.order_index);
+          setMemberRoleDesc(first.description || '');
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const handleRoleChange = (selectedTitle: string) => {
     setMemberRole(selectedTitle);
-    const matched = roles.find((r) => r.title === selectedTitle);
+    const matched = rolesList.find(r => r.title === selectedTitle);
     if (matched) {
-      setMemberTier(matched.tier);
+      setMemberOrderIndex(matched.order_index);
+      if (matched.description) setMemberRoleDesc(matched.description);
     }
   };
 
@@ -90,185 +94,240 @@ export const AdminInputModal: React.FC<AdminInputModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMsg('');
 
     try {
+      // 1. Pastikan angkatan ada di organisasi
+      await supabase.from('organizations').upsert(
+        { id: targetOrgId, name: `Generasi Angkatan ${targetOrgId}` },
+        { onConflict: 'id' }
+      );
+
       if (type === 'member') {
-        const { error } = await supabase.from('members').insert([{
-          org_id: angkatan,
-          name: memberName.trim(),
+        const { error } = await supabase.from('members').insert({
+          org_id: targetOrgId,
+          name: memberName,
           role: memberRole,
+          order_index: memberOrderIndex,
           dept: memberDept,
-          tier: memberTier,
-          img: memberImg.trim() || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300'
-        }]);
+          role_description: memberRoleDesc.trim() || null,
+          img: memberImg || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'
+        });
         if (error) throw error;
       } else if (type === 'event') {
-        const { error } = await supabase.from('events').insert([{
-          org_id: angkatan,
-          title: eventTitle.trim(),
-          cat: eventCat,
-          date: eventDate.trim() || new Date().toLocaleDateString('id-ID'),
-          location: eventLocation.trim() || 'Sekretariat',
-          description: eventDesc.trim()
-        }]);
+        const { error } = await supabase.from('events').insert({
+          org_id: targetOrgId,
+          title: eventTitle,
+          date: eventDate,
+          category: eventCategory,
+          desc: eventDesc,
+          status: eventStatus
+        });
         if (error) throw error;
       } else if (type === 'transaction') {
-        const { error } = await supabase.from('transactions').insert([{
-          org_id: angkatan,
-          title: txTitle.trim(),
-          category: txCat,
-          amount: parseFloat(txAmount) || 0,
-          type: txType
-        }]);
+        const { error } = await supabase.from('transactions').insert({
+          org_id: targetOrgId,
+          desc: txDesc,
+          amount: parseFloat(txAmount),
+          type: txType,
+          date: txDate
+        });
         if (error) throw error;
       }
 
       onSuccess();
       onClose();
     } catch (err: any) {
-      alert(`Gagal menyimpan: ${err.message}`);
+      setErrorMsg(err.message || 'Gagal menyimpan data.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-      <div className="bg-[#1d2e26] border border-[#385948] rounded-3xl w-full max-w-md p-5 space-y-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center pb-2 border-b border-[#2d473a]">
-          <h3 className="text-sm font-bold text-white capitalize">
-            Tambah {type === 'member' ? 'Pengurus' : type === 'event' ? 'Kegiatan' : 'Kas Keuangan'}
-          </h3>
-          <button onClick={onClose} className="p-1 rounded-full bg-[#2a4336] text-[#8da698] hover:text-white">
-            <X className="w-4 h-4" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+      <div className="bg-[#1d2e26] border border-[#2d473a] rounded-2xl w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+        {/* Header Modal */}
+        <div className="p-4 border-b border-[#2d473a] flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="p-2 rounded-lg bg-[#2a4336] text-[#86cfa7]">
+              {type === 'member' && <User className="w-5 h-5" />}
+              {type === 'event' && <Calendar className="w-5 h-5" />}
+              {type === 'transaction' && <DollarSign className="w-5 h-5" />}
+            </span>
+            <div>
+              <h3 className="font-bold text-white text-sm">
+                {type === 'member' && 'Tambah Pengurus / Anggota'}
+                {type === 'event' && 'Tambah Agenda Kegiatan'}
+                {type === 'transaction' && 'Catat Transaksi Keuangan'}
+              </h3>
+              <p className="text-[11px] text-[#8da698]">Tersinkronisasi langsung ke database publik</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-1.5 text-[#8da698] hover:text-white rounded-lg hover:bg-[#2a4336]">
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-3 text-xs">
-          {/* Pilihan Angkatan yang Terstandardisasi */}
-          <div className="bg-[#23372e] p-3 rounded-2xl border border-[#385948]">
-            <label className="text-[#86cfa7] font-bold block mb-1">Pilih Angkatan Target</label>
+        {/* Form Body dengan Scrollbar Custom */}
+        <form onSubmit={handleSubmit} className="p-4 space-y-3.5 overflow-y-auto max-h-[75vh]">
+          {errorMsg && (
+            <div className="p-3 bg-red-950/60 border border-red-500/50 rounded-lg text-xs text-red-300 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
+
+          {/* Selector Target Angkatan */}
+          <div className="p-3 bg-[#15231c] rounded-xl border border-[#2d473a]/80">
+            <label className="text-[11px] font-bold text-[#86cfa7] uppercase tracking-wider block mb-1">
+              Target Angkatan Organisasi *
+            </label>
             <select
-              value={angkatan}
-              onChange={(e) => setAngkatan(e.target.value)}
-              className="w-full bg-[#1a2a22] text-white p-2.5 rounded-xl border border-[#385948] font-bold outline-none"
+              value={targetOrgId}
+              onChange={(e) => setTargetOrgId(e.target.value)}
+              className="w-full bg-[#1d2e26] border border-[#2d473a] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#86cfa7]"
             >
-              {availableAngkatan.map((yr) => (
-                <option key={yr} value={yr}>Angkatan {yr}</option>
+              {availableOrgs.map((org) => (
+                <option key={org.id} value={org.id}>
+                  {org.name} ({org.id})
+                </option>
               ))}
             </select>
           </div>
 
-          {/* Form Pengurus Berdasarkan Master Data */}
+          {/* Form Anggota */}
           {type === 'member' && (
             <>
               <div>
-                <label className="text-[#8da698] block mb-1">Nama Lengkap</label>
+                <label className="text-xs text-[#8da698] block mb-1">Nama Lengkap *</label>
                 <input
+                  type="text"
                   required
                   value={memberName}
                   onChange={(e) => setMemberName(e.target.value)}
-                  placeholder="Nama Pengurus"
-                  className="w-full bg-[#2a4336] text-white p-2.5 rounded-xl border border-[#385948] outline-none"
+                  placeholder="Contoh: Muhammad Fikri"
+                  className="w-full bg-[#15231c] border border-[#2d473a] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#86cfa7]"
                 />
               </div>
 
-              <div>
-                <label className="text-[#8da698] block mb-1">Jabatan Resmi (Master Role)</label>
-                <select
-                  value={memberRole}
-                  onChange={(e) => handleRoleChange(e.target.value)}
-                  className="w-full bg-[#2a4336] text-white p-2.5 rounded-xl border border-[#385948] outline-none"
-                >
-                  {roles.map((r) => (
-                    <option key={r.title} value={r.title}>
-                      {r.title} ({r.tier.toUpperCase()})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[#8da698] block mb-1">Departemen / Divisi (Master Dept)</label>
-                <select
-                  value={memberDept}
-                  onChange={(e) => setMemberDept(e.target.value)}
-                  className="w-full bg-[#2a4336] text-white p-2.5 rounded-xl border border-[#385948] outline-none"
-                >
-                  {departments.map((d) => (
-                    <option key={d} value={d}>{d}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[#8da698] block mb-1">URL Foto Profil (Opsional)</label>
-                <input
-                  value={memberImg}
-                  onChange={(e) => setMemberImg(e.target.value)}
-                  placeholder="https://..."
-                  className="w-full bg-[#2a4336] text-white p-2.5 rounded-xl border border-[#385948] outline-none"
-                />
-              </div>
-            </>
-          )}
-
-          {/* Form Kegiatan Berdasarkan Master Kategori */}
-          {type === 'event' && (
-            <>
-              <div>
-                <label className="text-[#8da698] block mb-1">Nama Kegiatan</label>
-                <input
-                  required
-                  value={eventTitle}
-                  onChange={(e) => setEventTitle(e.target.value)}
-                  placeholder="Nama Event"
-                  className="w-full bg-[#2a4336] text-white p-2.5 rounded-xl border border-[#385948] outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[#8da698] block mb-1">Kategori Kegiatan</label>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="col-span-2">
+                  <label className="text-xs text-[#8da698] block mb-1">Jabatan *</label>
                   <select
-                    value={eventCat}
-                    onChange={(e) => setEventCat(e.target.value)}
-                    className="w-full bg-[#2a4336] text-white p-2.5 rounded-xl border border-[#385948] outline-none"
+                    value={memberRole}
+                    onChange={(e) => handleRoleChange(e.target.value)}
+                    className="w-full bg-[#15231c] border border-[#2d473a] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#86cfa7]"
                   >
-                    {categories.map((c) => (
-                      <option key={c} value={c}>{c}</option>
+                    {rolesList.map((r, idx) => (
+                      <option key={idx} value={r.title}>{r.title}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="text-[#8da698] block mb-1">Tanggal</label>
+                  <label className="text-xs text-[#8da698] block mb-1 flex items-center gap-1">
+                    <Hash className="w-3 h-3 text-[#86cfa7]" /> Urutan *
+                  </label>
                   <input
+                    type="number"
+                    min="1"
                     required
-                    value={eventDate}
-                    onChange={(e) => setEventDate(e.target.value)}
-                    placeholder="25 Okt 2026"
-                    className="w-full bg-[#2a4336] text-white p-2.5 rounded-xl border border-[#385948] outline-none"
+                    value={memberOrderIndex}
+                    onChange={(e) => setMemberOrderIndex(parseInt(e.target.value) || 1)}
+                    className="w-full bg-[#15231c] border border-[#2d473a] rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none focus:border-[#86cfa7]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-[#8da698] block mb-1">Lokasi Kegiatan</label>
-                <input
-                  value={eventLocation}
-                  onChange={(e) => setEventLocation(e.target.value)}
-                  placeholder="Aula Utama"
-                  className="w-full bg-[#2a4336] text-white p-2.5 rounded-xl border border-[#385948] outline-none"
+                <label className="text-xs text-[#8da698] block mb-1">Departemen / Divisi *</label>
+                <select
+                  value={memberDept}
+                  onChange={(e) => setMemberDept(e.target.value)}
+                  required
+                  className="w-full bg-[#15231c] border border-[#2d473a] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#86cfa7]"
+                >
+                  <option value="">-- Pilih Departemen --</option>
+                  {deptList.map((dept, idx) => (
+                    <option key={idx} value={dept}>{dept}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs text-[#8da698] block mb-1">Deskripsi Tugas & Peran (Opsional)</label>
+                <textarea
+                  rows={2}
+                  value={memberRoleDesc}
+                  onChange={(e) => setMemberRoleDesc(e.target.value)}
+                  placeholder="Rincian tanggung jawab dan koordinasi..."
+                  className="w-full bg-[#15231c] border border-[#2d473a] rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-[#86cfa7]"
                 />
               </div>
 
               <div>
-                <label className="text-[#8da698] block mb-1">Deskripsi Kegiatan</label>
+                <label className="text-xs text-[#8da698] block mb-1">URL Foto Profil</label>
+                <input
+                  type="url"
+                  value={memberImg}
+                  onChange={(e) => setMemberImg(e.target.value)}
+                  placeholder="https://..."
+                  className="w-full bg-[#15231c] border border-[#2d473a] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#86cfa7]"
+                />
+              </div>
+            </>
+          )}
+
+          {/* Form Kegiatan */}
+          {type === 'event' && (
+            <>
+              <div>
+                <label className="text-xs text-[#8da698] block mb-1">Judul Agenda Kegiatan *</label>
+                <input
+                  type="text"
+                  required
+                  value={eventTitle}
+                  onChange={(e) => setEventTitle(e.target.value)}
+                  placeholder="Contoh: Diskusi Terbuka Mahasiswa"
+                  className="w-full bg-[#15231c] border border-[#2d473a] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#86cfa7]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs text-[#8da698] block mb-1">Tanggal *</label>
+                  <input
+                    type="date"
+                    required
+                    value={eventDate}
+                    onChange={(e) => setEventDate(e.target.value)}
+                    className="w-full bg-[#15231c] border border-[#2d473a] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#86cfa7]"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-[#8da698] block mb-1">Kategori Kegiatan *</label>
+                  <select
+                    value={eventCategory}
+                    onChange={(e) => setEventCategory(e.target.value)}
+                    required
+                    className="w-full bg-[#15231c] border border-[#2d473a] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#86cfa7]"
+                  >
+                    <option value="">-- Pilih Kategori --</option>
+                    {categoriesList.map((cat, idx) => (
+                      <option key={idx} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs text-[#8da698] block mb-1">Deskripsi Singkat</label>
                 <textarea
+                  rows={2}
                   value={eventDesc}
                   onChange={(e) => setEventDesc(e.target.value)}
-                  placeholder="Keterangan singkat..."
-                  className="w-full bg-[#2a4336] text-white p-2.5 rounded-xl border border-[#385948] h-16 outline-none"
+                  placeholder="Jelaskan tujuan dan audiens kegiatan..."
+                  className="w-full bg-[#15231c] border border-[#2d473a] rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-[#86cfa7]"
                 />
               </div>
             </>
@@ -278,50 +337,66 @@ export const AdminInputModal: React.FC<AdminInputModalProps> = ({
           {type === 'transaction' && (
             <>
               <div>
-                <label className="text-[#8da698] block mb-1">Keterangan Transaksi</label>
+                <label className="text-xs text-[#8da698] block mb-1">Keterangan Transaksi *</label>
                 <input
+                  type="text"
                   required
-                  value={txTitle}
-                  onChange={(e) => setTxTitle(e.target.value)}
-                  placeholder="Iuran Bulanan / Konsumsi"
-                  className="w-full bg-[#2a4336] text-white p-2.5 rounded-xl border border-[#385948] outline-none"
+                  value={txDesc}
+                  onChange={(e) => setTxDesc(e.target.value)}
+                  placeholder="Contoh: Iuran Kas Bulanan, Konsumsi Rapat"
+                  className="w-full bg-[#15231c] border border-[#2d473a] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#86cfa7]"
                 />
               </div>
+
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-[#8da698] block mb-1">Tipe</label>
-                  <select
-                    value={txType}
-                    onChange={(e) => setTxType(e.target.value as any)}
-                    className="w-full bg-[#2a4336] text-white p-2.5 rounded-xl border border-[#385948] outline-none"
-                  >
-                    <option value="in">Pemasukan (+)</option>
-                    <option value="out">Pengeluaran (-)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[#8da698] block mb-1">Nominal (Rp)</label>
+                  <label className="text-xs text-[#8da698] block mb-1">Nominal (Rp) *</label>
                   <input
                     type="number"
                     required
+                    min="1"
                     value={txAmount}
                     onChange={(e) => setTxAmount(e.target.value)}
-                    placeholder="50000"
-                    className="w-full bg-[#2a4336] text-white p-2.5 rounded-xl border border-[#385948] outline-none"
+                    placeholder="150000"
+                    className="w-full bg-[#15231c] border border-[#2d473a] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#86cfa7]"
                   />
                 </div>
+                <div>
+                  <label className="text-xs text-[#8da698] block mb-1">Jenis Kas *</label>
+                  <select
+                    value={txType}
+                    onChange={(e) => setTxType(e.target.value as any)}
+                    className="w-full bg-[#15231c] border border-[#2d473a] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#86cfa7]"
+                  >
+                    <option value="expense">Pengeluaran (-)</option>
+                    <option value="income">Pemasukan (+)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs text-[#8da698] block mb-1">Tanggal Transaksi *</label>
+                <input
+                  type="date"
+                  required
+                  value={txDate}
+                  onChange={(e) => setTxDate(e.target.value)}
+                  className="w-full bg-[#15231c] border border-[#2d473a] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#86cfa7]"
+                />
               </div>
             </>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-[#86cfa7] hover:bg-[#96e0b7] text-[#121c17] font-bold rounded-xl mt-4 flex items-center justify-center space-x-2 transition disabled:opacity-50"
-          >
-            <Plus className="w-4 h-4" />
-            <span>{loading ? 'Menyimpan...' : 'Simpan Data'}</span>
-          </button>
+          {/* Submit */}
+          <div className="pt-2">
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2.5 bg-[#86cfa7] hover:bg-[#74be95] text-[#0d1612] font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2"
+            >
+              {loading ? 'Menyimpan...' : 'Simpan ke Database'}
+            </button>
+          </div>
         </form>
       </div>
     </div>

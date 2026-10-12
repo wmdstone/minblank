@@ -1,62 +1,59 @@
-// src/types/index.ts
-
+export type TabType = 'home' | 'members' | 'events' | 'finance';
 
 export interface Member {
-  id: string;
+  id: string | number;
   name: string;
   role: string;
   dept: string;
-  img: string;
-  bio?: string;
-  phone?: string;
-  email?: string;
+  img?: string;
+  order_index?: number;
+  role_description?: string;
+  instagram?: string;
+  linkedin?: string;
+}
+
+export interface MasterRole {
+  id: string | number;
+  title: string;
+  order_index: number;
+  description?: string;
 }
 
 export interface OrgEvent {
-  id: string;
+  id: string | number;
   title: string;
-  cat: string;
   date: string;
-  time: string;
-  location: string;
-  img: string;
+  category: string;
   desc: string;
-  attendees: number;
+  status: 'upcoming' | 'completed' | 'ongoing';
+  location?: string;
 }
 
 export interface Transaction {
-  id: string;
-  title: string;
-  category: string;
+  id: string | number;
+  desc: string;
   amount: number;
-  type: 'in' | 'out';
+  type: 'income' | 'expense';
   date: string;
+  category?: string;
 }
 
 export interface FinanceData {
-  balance: number;
   income: number;
   expense: number;
-  transactions: Transaction[];
+  balance: number;
+  history: Transaction[];
 }
 
-// INI YANG SEBELUMNYA HILANG ATAU BELUM TER-EKSPOR:
 export interface OrganizationYearData {
-  name: string;
   tagline: string;
-  overview: {
+  about: string;
+  stats: {
     membersCount: number;
     eventsCount: number;
-    transparency: string;
+    fundRaised: string;
   };
-  members: {
-    atas: Member[];
-    menengah: Member[];
-    bawah: Member[];
-    anggota?: Member[];
-  };
+  members: Member[];
   events: OrgEvent[];
   finance: FinanceData;
 }
-
-export type TabType = 'home' | 'members' | 'events' | 'finance';
