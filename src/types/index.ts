@@ -59,3 +59,4 @@ export interface OrganizationYearData {
   finance: FinanceData;
 }
 
+export type TabType = 'home' | 'members' | 'events' | 'finance';
