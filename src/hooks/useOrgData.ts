@@ -47,15 +47,45 @@ export const useOrgData = (selectedYear: string) => {
         phone: m.phone
       }));
 
+      // Regex untuk mendeteksi URL foto di dalam deskripsi jika ada
+      const urlRegex = /(https?:\/\/[^\s]+)/g;
 
-      const dbEvents: OrgEvent[] = (eventsRes.data || []).map(e => ({
-        id: e.id,
-        title: e.title,
-        date: e.date,
-        category: e.category,
-        desc: e.desc,
-        status: e.status || 'upcoming'
-      }));
+      const dbEvents: OrgEvent[] = (eventsRes.data || []).map(e => {
+        // Ambil array foto dari database atau parse jika berbentuk string/JSON
+        let rawPhotos: string[] = [];
+        if (Array.isArray(e.photos)) {
+          rawPhotos = e.photos;
+        } else if (typeof e.photos === 'string' && e.photos.trim().length > 0) {
+          try {
+            const parsed = JSON.parse(e.photos);
+            rawPhotos = Array.isArray(parsed) ? parsed : [e.photos];
+          } catch {
+            rawPhotos = e.photos.split('\n').map((s: string) => s.trim()).filter(Boolean);
+          }
+        }
+
+        const fullDesc = e.desc || e.description || '';
+
+        // Fallback: Jika kolom photos kosong tapi user mem-paste URL di deskripsi, ekstrak otomatis!
+        if (rawPhotos.length === 0 && fullDesc) {
+          const extracted = fullDesc.match(urlRegex);
+          if (extracted) {
+            rawPhotos = extracted.map((u: string) => u.trim());
+          }
+        }
+
+        return {
+          id: e.id,
+          title: e.title,
+          date: e.date,
+          category: e.category || e.cat || 'Umum',
+          desc: fullDesc,
+          status: e.status || 'upcoming',
+          location: e.location || '',
+          photos: rawPhotos
+        };
+      });
+
 
       const dbTrans: Transaction[] = (transRes.data || []).map(t => ({
         id: t.id,
