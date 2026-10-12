@@ -43,19 +43,19 @@ export const FinanceTab: React.FC<FinanceTabProps> = ({ finance, onDownloadRepor
       <div className="space-y-2">
         <h4 className="text-xs font-bold text-white uppercase tracking-wider">Mutasi Terakhir</h4>
         <div className="space-y-2">
-          {finance.transactions.map((tx) => (
+          {finance.history.map((tx) => (
             <div key={tx.id} className="bg-[#2a4336] p-3 rounded-xl flex items-center justify-between border border-[#385948]">
               <div className="flex items-center space-x-3">
-                <div className={`p-2 rounded-lg ${tx.type === 'in' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
-                  {tx.type === 'in' ? <ArrowDownRight className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
+                <div className={`p-2 rounded-lg ${tx.type === 'income' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
+                  {tx.type === 'income' ? <ArrowDownRight className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
                 </div>
                 <div>
-                  <h5 className="font-bold text-white text-xs">{tx.title}</h5>
-                  <p className="text-[9px] text-[#8da698]">{tx.date} • {tx.category}</p>
+                  <h5 className="font-bold text-white text-xs">{tx.desc}</h5>
+                  <p className="text-[9px] text-[#8da698]">{tx.date} • {tx.category ?? (tx.type === 'income' ? 'Pemasukan' : 'Pengeluaran')}</p>
                 </div>
               </div>
-              <span className={`text-xs font-bold ${tx.type === 'in' ? 'text-emerald-400' : 'text-rose-400'}`}>
-                {tx.type === 'in' ? '+' : '-'}{formatIDR(tx.amount)}
+              <span className={`text-xs font-bold ${tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                {tx.type === 'income' ? '+' : '-'}{formatIDR(tx.amount)}
               </span>
             </div>
           ))}

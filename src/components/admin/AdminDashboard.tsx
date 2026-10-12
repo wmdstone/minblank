@@ -196,7 +196,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToApp, cur
         <AdminInputModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
-          defaultAngkatan={selectedAngkatan}
+          defaultOrgId={selectedAngkatan}
           type={activeTab as any}
           onSuccess={fetchAdminData}
         />

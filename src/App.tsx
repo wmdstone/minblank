@@ -24,7 +24,7 @@ export default function App() {
   });
 
   // Data dinamis tersambung langsung ke Supabase dengan live-sync
-  const { data: currentOrg, isLoading, refetch } = useOrgData(angkatan);
+  const { data: currentOrg, loading: isLoading, refetch } = useOrgData(angkatan);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -84,8 +84,7 @@ export default function App() {
               {activeTab === 'members' && (
                 <MembersTab
                   members={currentOrg.members}
-                  onOpenMember={(member) => setDrawer({ isOpen: true, type: 'member', payload: member })}
-                  searchFilter={searchQuery}
+                  onSelectMember={(member) => setDrawer({ isOpen: true, type: 'member', payload: member })}
                 />
               )}
               {activeTab === 'events' && (
