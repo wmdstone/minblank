@@ -3,163 +3,156 @@ import { supabase } from '../utils/supabase';
 import { orgData as fallbackStaticData } from '../data/orgData';
 import type { OrganizationYearData, Member, OrgEvent, Transaction } from '../types';
 
-export function useOrgData(year: string) {
-  const [data, setData] = useState<OrganizationYearData>(
-    fallbackStaticData[year] || fallbackStaticData['2026']
-  );
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+export function useOrgData(activeAngkatan: string) {
+  const [data, setData] = useState<OrganizationYearData>(() => {
+    return fallbackStaticData[activeAngkatan] || {
+      name: 'GreenGen Org',
+      tagline: `Generasi ${activeAngkatan}`,
+      overview: { membersCount: 0, eventsCount: 0, transparency: '100%' },
+      members: { atas: [], menengah: [], bawah: [], anggota: [] },
+      events: [],
+      finance: { balance: 0, income: 0, expense: 0, transactions: [] }
+    };
+  });
 
-  const fetchOrgData = useCallback(async () => {
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isUsingSupabase, setIsUsingSupabase] = useState<boolean>(false);
+
+  const fetchByAngkatan = useCallback(async () => {
     setIsLoading(true);
     try {
-      // 1. Ambil data pengurus untuk angkatan aktif
-      const { data: membersRaw, error: membersError } = await supabase
+      // 1. Fetch Pengurus berdasarkan angkatan
+      const { data: membersRaw, error: mErr } = await supabase
         .from('members')
         .select('*')
-        .eq('org_id', year)
+        .eq('org_id', activeAngkatan)
         .order('created_at', { ascending: true });
 
-      if (membersError) throw membersError;
+      if (mErr) throw mErr;
 
-      // Kelompokkan pengurus ke dalam tier (atas, menengah, bawah, anggota)
-      const atas: Member[] = [];
-      const menengah: Member[] = [];
-      const bawah: Member[] = [];
-      const anggota: Member[] = [];
-
-      (membersRaw || []).forEach((m: any) => {
-        const item: Member = {
-          id: m.id,
-          name: m.name,
-          role: m.role,
-          dept: m.dept,
-          img: m.img || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300',
-          bio: m.bio,
-          phone: m.phone,
-          email: m.email,
-        };
-
-        if (m.tier === 'atas') atas.push(item);
-        else if (m.tier === 'menengah') menengah.push(item);
-        else if (m.tier === 'bawah') bawah.push(item);
-        else anggota.push(item);
-      });
-
-      // 2. Ambil data kegiatan
-      const { data: eventsRaw, error: eventsError } = await supabase
+      // 2. Fetch Kegiatan berdasarkan angkatan
+      const { data: eventsRaw, error: eErr } = await supabase
         .from('events')
         .select('*')
-        .eq('org_id', year)
-        .order('date', { ascending: false });
+        .eq('org_id', activeAngkatan)
+        .order('created_at', { ascending: false });
 
-      if (eventsError) throw eventsError;
+      if (eErr) throw eErr;
 
-      const events: OrgEvent[] = (eventsRaw || []).map((e: any) => ({
-        id: e.id,
-        title: e.title,
-        cat: e.cat,
-        date: e.date,
-        time: e.time || '09:00 WIB',
-        location: e.location || 'Aula Utama',
-        img: e.img || 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=600',
-        desc: e.description || '',
-        attendees: e.attendees || 0,
-      }));
-
-      // 3. Ambil mutasi kas keuangan
-      const { data: txRaw, error: txError } = await supabase
+      // 3. Fetch Transaksi Keuangan berdasarkan angkatan
+      const { data: txRaw, error: tErr } = await supabase
         .from('transactions')
         .select('*')
-        .eq('org_id', year)
+        .eq('org_id', activeAngkatan)
         .order('date', { ascending: false });
 
-      if (txError) throw txError;
+      if (tErr) throw tErr;
 
-      const transactions: Transaction[] = (txRaw || []).map((t: any) => ({
-        id: t.id,
-        title: t.title,
-        category: t.category,
-        amount: Number(t.amount),
-        type: t.type,
-        date: t.date,
-      }));
+      // Jika ada data di salah satu tabel Supabase, pakai data Supabase murni
+      const hasSupabaseData = (membersRaw?.length || 0) > 0 || (eventsRaw?.length || 0) > 0 || (txRaw?.length || 0) > 0;
 
-      const income = transactions
-        .filter((t) => t.type === 'in')
-        .reduce((sum, t) => sum + t.amount, 0);
+      if (hasSupabaseData) {
+        setIsUsingSupabase(true);
 
-      const expense = transactions
-        .filter((t) => t.type === 'out')
-        .reduce((sum, t) => sum + t.amount, 0);
+        const atas: Member[] = [];
+        const menengah: Member[] = [];
+        const bawah: Member[] = [];
+        const anggota: Member[] = [];
 
-      const balance = income - expense;
+        membersRaw?.forEach((m) => {
+          const item: Member = {
+            id: m.id,
+            name: m.name,
+            role: m.role,
+            dept: m.dept,
+            img: m.img || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300',
+            bio: m.bio || '',
+            email: m.email || '',
+            phone: m.phone || ''
+          };
+          if (m.tier === 'atas') atas.push(item);
+          else if (m.tier === 'menengah') menengah.push(item);
+          else if (m.tier === 'bawah') bawah.push(item);
+          else anggota.push(item);
+        });
 
-      // 4. Update state jika data di Supabase ada, jika kosong fallback ke static
-      const staticFallback = fallbackStaticData[year] || fallbackStaticData['2026'];
+        const events: OrgEvent[] = (eventsRaw || []).map((e) => ({
+          id: e.id,
+          title: e.title,
+          cat: e.cat,
+          date: e.date,
+          time: e.time || '08:00 WIB',
+          location: e.location || 'Kampus',
+          img: e.img || 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=600',
+          desc: e.description || '',
+          attendees: e.attendees || 0
+        }));
 
-      const totalMembersCount =
-        membersRaw && membersRaw.length > 0
-          ? membersRaw.length
-          : staticFallback.overview.membersCount;
+        const transactions: Transaction[] = (txRaw || []).map((t) => ({
+          id: t.id,
+          title: t.title,
+          category: t.category,
+          amount: Number(t.amount),
+          type: t.type,
+          date: t.date
+        }));
 
-      const totalEventsCount =
-        eventsRaw && eventsRaw.length > 0
-          ? eventsRaw.length
-          : staticFallback.overview.eventsCount;
+        const income = transactions.filter(t => t.type === 'in').reduce((acc, cur) => acc + cur.amount, 0);
+        const expense = transactions.filter(t => t.type === 'out').reduce((acc, cur) => acc + cur.amount, 0);
 
-      setData({
-        name: 'GreenGen Org',
-        tagline: 'Daya Cipta & Keberlanjutan',
-        overview: {
-          membersCount: totalMembersCount,
-          eventsCount: totalEventsCount,
-          transparency: '100%',
-        },
-        members: {
-          atas: atas.length > 0 ? atas : staticFallback.members.atas,
-          menengah: menengah.length > 0 ? menengah : staticFallback.members.menengah,
-          bawah: bawah.length > 0 ? bawah : staticFallback.members.bawah,
-          anggota: anggota.length > 0 ? anggota : staticFallback.members.anggota,
-        },
-        events: events.length > 0 ? events : staticFallback.events,
-        finance: {
-          balance: transactions.length > 0 ? balance : staticFallback.finance.balance,
-          income: transactions.length > 0 ? income : staticFallback.finance.income,
-          expense: transactions.length > 0 ? expense : staticFallback.finance.expense,
-          transactions: transactions.length > 0 ? transactions : staticFallback.finance.transactions,
-        },
-      });
-
-      setError(null);
-    } catch (err: any) {
-      console.warn('Gagal memuat dari Supabase, beralih ke data lokal:', err.message);
-      setError(err.message);
-      setData(fallbackStaticData[year] || fallbackStaticData['2026']);
+        setData({
+          name: 'GreenGen Org',
+          tagline: `Generasi Angkatan ${activeAngkatan}`,
+          overview: {
+            membersCount: (membersRaw?.length || 0),
+            eventsCount: events.length,
+            transparency: '100%'
+          },
+          members: { atas, menengah, bawah, anggota },
+          events,
+          finance: {
+            balance: income - expense,
+            income,
+            expense,
+            transactions
+          }
+        });
+      } else {
+        // Jika belum ada data di Supabase untuk angkatan ini, gunakan template statis
+        setIsUsingSupabase(false);
+        const staticItem = fallbackStaticData[activeAngkatan] || {
+          name: 'GreenGen Org',
+          tagline: `Generasi Angkatan ${activeAngkatan}`,
+          overview: { membersCount: 0, eventsCount: 0, transparency: '100%' },
+          members: { atas: [], menengah: [], bawah: [], anggota: [] },
+          events: [],
+          finance: { balance: 0, income: 0, expense: 0, transactions: [] }
+        };
+        setData(staticItem);
+      }
+    } catch (err) {
+      console.error('Error fetching Supabase data:', err);
+      setIsUsingSupabase(false);
     } finally {
       setIsLoading(false);
     }
-  }, [year]);
+  }, [activeAngkatan]);
 
   useEffect(() => {
-    fetchOrgData();
+    fetchByAngkatan();
 
-    // Setup Realtime Subscription: jika admin menambah/mengubah data, langsung update di app
+    // Listen realtime changes untuk semua tabel
     const channel = supabase
-      .channel('schema-db-changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public' },
-        () => {
-          fetchOrgData();
-        }
-      )
+      .channel(`realtime-org-${activeAngkatan}`)
+      .on('postgres_changes', { event: '*', schema: 'public' }, () => {
+        fetchByAngkatan();
+      })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchOrgData]);
+  }, [fetchByAngkatan, activeAngkatan]);
 
-  return { data, isLoading, error, refetch: fetchOrgData };
+  return { data, isLoading, isUsingSupabase, refetch: fetchByAngkatan };
 }

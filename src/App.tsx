@@ -34,12 +34,13 @@ export default function App() {
   return (
     <div className="min-h-screen w-full flex justify-center items-center bg-[#0d1612] p-0 md:p-4 selection:bg-[#3b5848] selection:text-white">
       <div className="w-full max-w-md h-screen md:h-[94vh] md:rounded-[40px] bg-[#1d2e26] shadow-2xl flex flex-col relative overflow-hidden border border-[#2d473a]">
-        
+
         {isAdminMode ? (
           <AdminDashboard
+            currentAngkatan={angkatan}
             onBackToApp={() => {
               setIsAdminMode(false);
-              refetch(); // Refresh data tampilan publik setelah keluar dari admin
+              refetch();
             }}
           />
         ) : (
