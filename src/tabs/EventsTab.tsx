@@ -13,7 +13,7 @@ export const EventsTab: React.FC<EventsTabProps> = ({ events, onOpenEvent, searc
   const categories = ['All', 'Lingkungan', 'Edukasi', 'Konferensi'];
 
   const filtered = events.filter(e => {
-    const matchCat = selectedCat === 'All' || e.cat.toLowerCase() === selectedCat.toLowerCase();
+    const matchCat = selectedCat === 'All' || (e.category || '').toLowerCase() === selectedCat.toLowerCase();
     const matchSearch = e.title.toLowerCase().includes(searchFilter.toLowerCase());
     return matchCat && matchSearch;
   });
@@ -43,9 +43,8 @@ export const EventsTab: React.FC<EventsTabProps> = ({ events, onOpenEvent, searc
             onClick={() => onOpenEvent(event)}
             className="bg-[#2a4336] rounded-2xl overflow-hidden border border-[#385948] cursor-pointer hover:border-[#86cfa7] transition"
           >
-            <img src={event.img} alt={event.title} className="w-full h-32 object-cover" />
             <div className="p-3.5 space-y-2">
-              <span className="text-[9px] bg-[#1d2e26] text-[#86cfa7] px-2 py-0.5 rounded font-bold">{event.cat}</span>
+              <span className="text-[9px] bg-[#1d2e26] text-[#86cfa7] px-2 py-0.5 rounded font-bold">{event.category}</span>
               <h4 className="font-bold text-white text-sm">{event.title}</h4>
               <div className="flex justify-between items-center text-[10px] text-[#8da698]">
                 <div className="flex items-center space-x-1.5"><Calendar className="w-3.5 h-3.5 text-[#86cfa7]" /><span>{event.date}</span></div>
