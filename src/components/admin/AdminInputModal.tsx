@@ -246,19 +246,20 @@ export const AdminInputModal: React.FC<Props> = ({
           .map(url => url.trim())
           .filter(url => url.length > 0);
 
+        const chosenCategory = eventCategory || 'Umum';
+        const descText = eventDesc.trim();
         const payload: any = {
-    org_id: selectedOrgId,
-    title: eventForm.title,
-    // Kirimkan keduanya agar kompatibel dengan schema lama (cat) maupun baru (category)
-    cat: chosenCategory,
-    category: chosenCategory,
-    date: eventForm.date || new Date().toISOString().split('T')[0],
-    location: eventForm.location || '',
-    status: eventForm.status || 'upcoming',
-    // Kirimkan juga variasi nama deskripsi
-    desc: descText,
-    description: descText,
-    photos: eventForm.photos || [],
+          org_id: targetOrgId,
+          title: eventTitle,
+          // Kompatibel dengan schema lama (cat) maupun baru (category)
+          cat: chosenCategory,
+          category: chosenCategory,
+          date: eventDate || new Date().toISOString().split('T')[0],
+          location: eventLocation || '',
+          status: eventStatus || 'upcoming',
+          desc: descText,
+          description: descText,
+          photos: photosArray,
         };
 
         if (isEdit) {
