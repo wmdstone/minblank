@@ -185,7 +185,12 @@ export const EventsTab: React.FC<EventsTabProps> = ({ events, onOpenEvent, searc
                       >
                         {/* Simulai Embedded Photo Frame (Jika event punya gambar, tampilkan di sini, jika tidak buat bingkai estetis) */}
                         <div className="relative w-full h-32 bg-[#15221b] rounded-2xl overflow-hidden border border-[#2d473a]/50 flex items-center justify-center group-hover:border-[#86cfa7]/30 transition-colors">
-
+                          {(event.photos?.[0] || (event as any).img) ? (
+                            <img
+                              src={event.photos?.[0] || (event as any).img}
+                              alt={event.title}
+                              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            />
                           ) : (
                             <div className="absolute inset-0 bg-gradient-to-tr from-[#1d2e26] via-[#243a2f] to-[#1d2e26] flex items-center justify-center">
                               <Calendar className="w-8 h-8 text-[#86cfa7]/30" />
