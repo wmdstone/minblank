@@ -1,8 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../utils/supabase';
-import { Users, Calendar, Wallet, Trash2, Plus, ArrowLeft, Settings } from 'lucide-react';
+import { 
+  Users, 
+  Calendar, 
+  Wallet, 
+  Plus, 
+  ArrowLeft, 
+  Settings, 
+  ChevronDown, 
+  ChevronRight, 
+  Hash
+} from 'lucide-react';
 import { AdminInputModal } from './AdminInputModal';
 import { MasterDataTab } from './MasterDataTab';
+import { RowActionMenu } from './RowActionMenu';
+import { getRobotAvatar } from '../../utils/avatar';
 
 interface AdminDashboardProps {
   onBackToApp: () => void;
@@ -17,18 +29,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToApp, cur
   const [events, setEvents] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // State Modal (Create, Edit, Duplicate)
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'create' | 'edit' | 'duplicate'>('create');
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+
+  // State Collapsible Groups (Wikipedia Style)
+  const [expandedDept, setExpandedDept] = useState<Record<string, boolean>>({});
+  const [expandedCat, setExpandedCat] = useState<Record<string, boolean>>({});
 
   const fetchAdminData = async () => {
     setLoading(true);
-    // Ambil daftar organisasi yang terdaftar
     const { data: orgs } = await supabase.from('organizations').select('id').order('id', { ascending: false });
     const orgList = orgs?.map((o) => o.id) || ['2026', '2025'];
     setAvailableAngkatan(orgList);
 
-    const { data: mData } = await supabase.from('members').select('*').eq('org_id', selectedAngkatan);
-    const { data: eData } = await supabase.from('events').select('*').eq('org_id', selectedAngkatan);
-    const { data: tData } = await supabase.from('transactions').select('*').eq('org_id', selectedAngkatan);
+    const { data: mData } = await supabase.from('members').select('*').eq('org_id', selectedAngkatan).order('order_index', { ascending: true });
+    const { data: eData } = await supabase.from('events').select('*').eq('org_id', selectedAngkatan).order('date', { ascending: true });
+    const { data: tData } = await supabase.from('transactions').select('*').eq('org_id', selectedAngkatan).order('date', { ascending: false });
 
     setMembers(mData || []);
     setEvents(eData || []);
@@ -39,6 +58,48 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToApp, cur
   useEffect(() => {
     fetchAdminData();
   }, [selectedAngkatan]);
+
+  // Grouping Pengurus per Departemen
+  const groupedMembers = members.reduce((acc: Record<string, any[]>, m) => {
+    const dept = m.dept || 'Umum';
+    if (!acc[dept]) acc[dept] = [];
+    acc[dept].push(m);
+    return acc;
+  }, {});
+
+  // Grouping Kegiatan per Kategori
+  const groupedEvents = events.reduce((acc: Record<string, any[]>, e) => {
+    const cat = e.category || 'Umum';
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(e);
+    return acc;
+  }, {});
+
+  const toggleDept = (dept: string) => {
+    setExpandedDept(prev => ({ ...prev, [dept]: !prev[dept] }));
+  };
+
+  const toggleCat = (cat: string) => {
+    setExpandedCat(prev => ({ ...prev, [cat]: !prev[cat] }));
+  };
+
+  const handleOpenCreate = () => {
+    setModalMode('create');
+    setSelectedItem(null);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (item: any) => {
+    setModalMode('edit');
+    setSelectedItem(item);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenDuplicate = (item: any) => {
+    setModalMode('duplicate');
+    setSelectedItem(item);
+    setIsModalOpen(true);
+  };
 
   const deleteItem = async (table: string, id: string) => {
     if (!confirm('Hapus item ini dari database?')) return;
@@ -56,13 +117,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToApp, cur
           </button>
           <div>
             <h2 className="font-bold text-sm">Dashboard Admin</h2>
-            <p className="text-[10px] text-[#86cfa7]">Kelola Database & Master Data</p>
+            <p className="text-[10px] text-[#86cfa7]">Kelola Data & Master Struktur</p>
           </div>
         </div>
 
         {activeTab !== 'master' && (
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={handleOpenCreate}
             className="px-3.5 py-2 bg-[#86cfa7] hover:bg-[#97dfb7] text-[#121c17] rounded-xl text-xs font-bold flex items-center space-x-1.5 transition"
           >
             <Plus className="w-4 h-4" />
@@ -71,7 +132,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToApp, cur
         )}
       </div>
 
-      {/* Selector Angkatan (Hanya tampil di tab data, bukan master) */}
+      {/* Selector Angkatan */}
       {activeTab !== 'master' && (
         <div className="px-4 py-2.5 bg-[#1d2e26]/80 border-b border-[#2d473a] flex items-center justify-between">
           <span className="text-xs text-[#8da698]">Angkatan Aktif:</span>
@@ -87,7 +148,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToApp, cur
         </div>
       )}
 
-      {/* 4 Tabs: Pengurus, Kegiatan, Kas, dan Master Data */}
+      {/* 4 Tabs Navigasi */}
       <div className="flex border-b border-[#2d473a] bg-[#1d2e26]/50 px-2 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setActiveTab('member')}
@@ -128,7 +189,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToApp, cur
       </div>
 
       {/* Konten Tab */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {activeTab === 'master' ? (
           <MasterDataTab />
         ) : loading ? (
@@ -137,70 +198,183 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToApp, cur
           members.length === 0 ? (
             <p className="text-center text-xs text-[#8da698] py-8">Belum ada pengurus di Angkatan {selectedAngkatan}.</p>
           ) : (
-            members.map((m) => (
-              <div key={m.id} className="p-3 bg-[#2a4336] rounded-2xl flex items-center justify-between border border-[#385948]">
-                <div className="flex items-center space-x-3">
-                  <img src={m.img} alt={m.name} className="w-10 h-10 rounded-xl object-cover" />
-                  <div>
-                    <h4 className="font-bold text-xs">{m.name}</h4>
-                    <p className="text-[10px] text-[#86cfa7]">{m.role} • {m.dept} ({m.tier})</p>
+            // COLLAPSIBLE PENGURUS STYLE HEADING WIKIPEDIA (TANPA WRAPPER KARTU / TANPA OVERFLOW HIDDEN)
+            <div className="space-y-6">
+              {Object.keys(groupedMembers).map((dept) => {
+                const isExpanded = expandedDept[dept] !== false; // default open
+                const list = groupedMembers[dept];
+
+                return (
+                  <div key={dept} className="space-y-2">
+                    {/* Wikipedia Style Heading */}
+                    <div
+                      onClick={() => toggleDept(dept)}
+                      className="flex items-center justify-between py-2 border-b-2 border-[#2d473a] hover:border-[#86cfa7]/60 cursor-pointer select-none transition group"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <span className="w-1.5 h-4 bg-[#86cfa7] rounded-full inline-block" />
+                        <h3 className="text-sm font-bold text-white group-hover:text-[#86cfa7] transition">
+                          {dept}
+                        </h3>
+                        <span className="text-[10px] bg-[#2a4336] text-[#86cfa7] px-2 py-0.5 rounded-full font-bold">
+                          {list.length}
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-1 text-[#8da698]">
+                        <span className="text-[10px] hidden sm:inline">{isExpanded ? 'Tutup' : 'Buka'}</span>
+                        {isExpanded ? (
+                          <ChevronDown className="w-4 h-4 text-[#86cfa7]" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4 text-[#8da698]" />
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Content Items Langsung Mengalir (Dropdown Bebas Tanpa Clipping) */}
+                    {isExpanded && (
+                      <div className="space-y-2 pt-1 pl-1">
+                        {list.map((m) => (
+                          <div
+                            key={m.id}
+                            className="p-3 bg-[#1d2e26] hover:bg-[#243a30] rounded-2xl flex items-center justify-between border border-[#2d473a] transition relative shadow-sm"
+                          >
+                            <div className="flex items-center space-x-3">
+                              <img
+                                src={m.img || getRobotAvatar(m.name)}
+                                alt={m.name}
+                                className="w-10 h-10 rounded-xl object-cover border border-[#2d473a]"
+                                onError={(e) => {
+                                  (e.currentTarget as HTMLImageElement).src = getRobotAvatar(m.name);
+                                }}
+                              />
+                              <div>
+                                <h4 className="font-bold text-xs text-white flex items-center gap-1.5">
+                                  <span>{m.name}</span>
+                                  <span className="text-[9px] text-[#86cfa7] bg-[#2a4336] px-1.5 py-0.2 rounded font-mono">
+                                    #{m.order_index ?? 99}
+                                  </span>
+                                </h4>
+                                <p className="text-[11px] text-[#86cfa7]">{m.role}</p>
+                                {m.bio && <p className="text-[10px] text-[#8da698] line-clamp-1 italic">{m.bio}</p>}
+                              </div>
+                            </div>
+
+                            {/* Dropdown Menu Opsi (Edit, Duplikat, Hapus) */}
+                            <RowActionMenu
+                              onEdit={() => handleOpenEdit(m)}
+                              onDuplicate={() => handleOpenDuplicate(m)}
+                              onDelete={() => deleteItem('members', m.id)}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </div>
-                <button onClick={() => deleteItem('members', m.id)} className="p-2 text-rose-400 hover:text-rose-300">
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            ))
+                );
+              })}
+            </div>
           )
         ) : activeTab === 'event' ? (
           events.length === 0 ? (
             <p className="text-center text-xs text-[#8da698] py-8">Belum ada kegiatan di Angkatan {selectedAngkatan}.</p>
           ) : (
-            events.map((e) => (
-              <div key={e.id} className="p-3 bg-[#2a4336] rounded-2xl flex items-center justify-between border border-[#385948]">
-                <div>
-                  <h4 className="font-bold text-xs">{e.title}</h4>
-                  <p className="text-[10px] text-[#8da698]">{e.date} • {e.cat}</p>
-                </div>
-                <button onClick={() => deleteItem('events', e.id)} className="p-2 text-rose-400 hover:text-rose-300">
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            ))
+            // COLLAPSIBLE KEGIATAN STYLE HEADING WIKIPEDIA
+            <div className="space-y-6">
+              {Object.keys(groupedEvents).map((cat) => {
+                const isExpanded = expandedCat[cat] !== false; // default open
+                const list = groupedEvents[cat];
+
+                return (
+                  <div key={cat} className="space-y-2">
+                    {/* Wikipedia Style Heading */}
+                    <div
+                      onClick={() => toggleCat(cat)}
+                      className="flex items-center justify-between py-2 border-b-2 border-[#2d473a] hover:border-[#86cfa7]/60 cursor-pointer select-none transition group"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <span className="w-1.5 h-4 bg-[#86cfa7] rounded-full inline-block" />
+                        <h3 className="text-sm font-bold text-white group-hover:text-[#86cfa7] transition">
+                          {cat}
+                        </h3>
+                        <span className="text-[10px] bg-[#2a4336] text-[#86cfa7] px-2 py-0.5 rounded-full font-bold">
+                          {list.length}
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-1 text-[#8da698]">
+                        <span className="text-[10px] hidden sm:inline">{isExpanded ? 'Tutup' : 'Buka'}</span>
+                        {isExpanded ? (
+                          <ChevronDown className="w-4 h-4 text-[#86cfa7]" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4 text-[#8da698]" />
+                        )}
+                      </div>
+                    </div>
+
+                    {isExpanded && (
+                      <div className="space-y-2 pt-1 pl-1">
+                        {list.map((e) => (
+                          <div
+                            key={e.id}
+                            className="p-3 bg-[#1d2e26] hover:bg-[#243a30] rounded-2xl flex items-center justify-between border border-[#2d473a] transition relative shadow-sm"
+                          >
+                            <div>
+                              <h4 className="font-bold text-xs text-white">{e.title}</h4>
+                              <p className="text-[10px] text-[#86cfa7]">{e.date} • {e.status}</p>
+                              {e.location && <p className="text-[10px] text-[#8da698]">{e.location}</p>}
+                            </div>
+                            <RowActionMenu
+                              onEdit={() => handleOpenEdit(e)}
+                              onDuplicate={() => handleOpenDuplicate(e)}
+                              onDelete={() => deleteItem('events', e.id)}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           )
         ) : (
+          // TAB KAS
           transactions.length === 0 ? (
-            <p className="text-center text-xs text-[#8da698] py-8">Belum ada transaksi di Angkatan {selectedAngkatan}.</p>
+            <p className="text-center text-xs text-[#8da698] py-8">Belum ada transaksi kas di Angkatan {selectedAngkatan}.</p>
           ) : (
-            transactions.map((t) => (
-              <div key={t.id} className="p-3 bg-[#2a4336] rounded-2xl flex items-center justify-between border border-[#385948]">
-                <div>
-                  <h4 className="font-bold text-xs">{t.title}</h4>
-                  <p className="text-[10px] text-[#8da698]">{t.date} • {t.category}</p>
+            <div className="space-y-2">
+              {transactions.map((t) => (
+                <div key={t.id} className="p-3 bg-[#1d2e26] rounded-2xl flex items-center justify-between border border-[#2d473a]">
+                  <div>
+                    <h4 className="font-bold text-xs text-white">{t.desc}</h4>
+                    <p className="text-[10px] text-[#8da698]">{t.date}</p>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <span className={`text-xs font-bold ${t.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {t.type === 'income' ? '+' : '-'} Rp {Number(t.amount).toLocaleString('id-ID')}
+                    </span>
+                    <RowActionMenu
+                      onEdit={() => handleOpenEdit(t)}
+                      onDuplicate={() => handleOpenDuplicate(t)}
+                      onDelete={() => deleteItem('transactions', t.id)}
+                    />
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <span className={`text-xs font-bold ${t.type === 'in' ? 'text-emerald-400' : 'text-rose-400'}`}>
-                    {t.type === 'in' ? '+' : '-'}Rp {Number(t.amount).toLocaleString('id-ID')}
-                  </span>
-                  <button onClick={() => deleteItem('transactions', t.id)} className="p-1 text-rose-400">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))
+              ))}
+            </div>
           )
         )}
       </div>
 
-      {activeTab !== 'master' && (
-        <AdminInputModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          defaultOrgId={selectedAngkatan}
-          type={activeTab as any}
-          onSuccess={fetchAdminData}
-        />
-      )}
+      {/* Modal Input/Edit/Duplicate */}
+      <AdminInputModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        type={activeTab === 'master' ? 'member' : activeTab}
+        defaultOrgId={selectedAngkatan}
+        onSuccess={fetchAdminData}
+        initialData={selectedItem}
+        mode={modalMode}
+      />
     </div>
   );
 };

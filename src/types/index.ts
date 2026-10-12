@@ -8,12 +8,19 @@ export interface Member {
   img?: string;
   order_index?: number;
   role_description?: string;
+  bio?: string;
   instagram?: string;
   linkedin?: string;
+  twitter?: string;
+  whatsapp?: string;
+  website?: string;
+  email?: string;
+  phone?: string;
 }
 
 export interface MasterRole {
   id: string | number;
+  department: string;
   title: string;
   order_index: number;
   description?: string;
@@ -27,6 +34,7 @@ export interface OrgEvent {
   desc: string;
   status: 'upcoming' | 'completed' | 'ongoing';
   location?: string;
+  photos?: string[]; // Kumpulan URL foto untuk carousel mini blog
 }
 
 export interface Transaction {

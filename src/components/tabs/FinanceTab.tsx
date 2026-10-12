@@ -1,5 +1,5 @@
 import React from 'react';
-import type { FinanceData } from '../types';
+import type { FinanceData } from '@/types/index';
 import { ArrowDownRight, ArrowUpRight, Download } from 'lucide-react';
 
 interface FinanceTabProps {

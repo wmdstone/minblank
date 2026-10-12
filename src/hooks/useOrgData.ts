@@ -40,9 +40,13 @@ export const useOrgData = (selectedYear: string) => {
         img: m.img,
         order_index: m.order_index ?? 99,
         role_description: m.role_description,
+        bio: m.bio,
         instagram: m.instagram,
-        linkedin: m.linkedin
+        linkedin: m.linkedin,
+        email: m.email,
+        phone: m.phone
       }));
+
 
       const dbEvents: OrgEvent[] = (eventsRes.data || []).map(e => ({
         id: e.id,
