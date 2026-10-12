@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../utils/supabase';
+import { supabase } from '@/utils/supabase';
+import { getEventPhotos } from '@/utils/eventPhotos';
 import { orgData as staticOrgData } from '../data/orgData';
 import type { OrganizationYearData, Member, OrgEvent, Transaction } from '../types';
 
@@ -47,33 +48,9 @@ export const useOrgData = (selectedYear: string) => {
         phone: m.phone
       }));
 
-      // Regex untuk mendeteksi URL foto di dalam deskripsi jika ada
-      const urlRegex = /(https?:\/\/[^\s]+)/g;
-
       const dbEvents: OrgEvent[] = (eventsRes.data || []).map(e => {
-        // Ambil array foto dari database atau parse jika berbentuk string/JSON
-        let rawPhotos: string[] = [];
-        if (Array.isArray(e.photos)) {
-          rawPhotos = e.photos;
-        } else if (typeof e.photos === 'string' && e.photos.trim().length > 0) {
-          try {
-            const parsed = JSON.parse(e.photos);
-            rawPhotos = Array.isArray(parsed) ? parsed : [e.photos];
-          } catch {
-            rawPhotos = e.photos.split('\n').map((s: string) => s.trim()).filter(Boolean);
-          }
-        }
-
         const fullDesc = e.desc || e.description || '';
-
-        // Fallback: Jika kolom photos kosong tapi user mem-paste URL di deskripsi, ekstrak otomatis!
-        if (rawPhotos.length === 0 && fullDesc) {
-          const extracted = fullDesc.match(urlRegex);
-          if (extracted) {
-            rawPhotos = extracted.map((u: string) => u.trim());
-          }
-        }
-
+        const rawPhotos = getEventPhotos(e);
         return {
           id: e.id,
           title: e.title,

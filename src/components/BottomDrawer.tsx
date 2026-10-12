@@ -6,15 +6,17 @@ import {
   MapPin,
   Calendar,
   CheckCircle,
-  ExternalLink,
   Globe,
   MessageCircle,
   Briefcase,
-  ChevronLeft,
-  ChevronRight,
   Image as ImageIcon
 } from 'lucide-react';
 import { getRobotAvatar } from '@/utils/avatar';
+import { getEventPhotos, getEventDescription } from '@/utils/eventPhotos';
+import { EventPhotoCarousel } from '@/components/EventPhotoCarousel';
+import { DrawerButton } from '@/components/DrawerButton';
+import { createPortal } from 'react-dom';
+import { useRef } from 'react';
 
 interface BottomDrawerProps {
   isOpen: boolean;
@@ -25,104 +27,76 @@ interface BottomDrawerProps {
 
 export const BottomDrawer: React.FC<BottomDrawerProps> = ({ isOpen, type, payload, onClose }) => {
   const [mounted, setMounted] = useState(false);
-  const [activePhotoIdx, setActivePhotoIdx] = useState(0);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
       setMounted(true);
-      setActivePhotoIdx(0);
+
     } else {
       const timer = setTimeout(() => setMounted(false), 300);
       return () => clearTimeout(timer);
     }
   }, [isOpen]);
 
-  if (!mounted && !isOpen) return null;
+  const photosList = useMemo(() => getEventPhotos(payload), [payload]);
+  const cleanDescription = useMemo(() => getEventDescription(payload, photosList), [payload, photosList]);
 
-  // Format link URL agar selalu valid dengan protokol https://
+  useEffect(() => {
+    if (!isOpen) return;
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    panelRef.current?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+      if (event.key !== 'Tab') return;
+      const elements = panelRef.current?.querySelectorAll<HTMLElement>('button, a[href], [tabindex="0"]');
+      if (!elements?.length) return;
+      const first = elements[0];
+      const last = elements[elements.length - 1];
+      if (event.shiftKey && (document.activeElement === first || document.activeElement === panelRef.current)) {
+        event.preventDefault(); last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault(); first?.focus();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', onKey);
+      previouslyFocused?.focus();
+    };
+  }, [isOpen, onClose]);
+
+  if (!mounted && !isOpen) return null;
   const formatUrl = (url?: string) => {
     if (!url) return '';
     return url.startsWith('http://') || url.startsWith('https://') ? url : `https://${url}`;
   };
 
-  // 1. Kumpulkan daftar foto dari payload.photos, payload.img, atau ekstrak URL dari teks deskripsi
-  const photosList: string[] = useMemo(() => {
-    if (!payload) return [];
-    let list: string[] = [];
-
-    if (Array.isArray(payload.photos) && payload.photos.length > 0) {
-      list = payload.photos.filter((p: string) => Boolean(p && typeof p === 'string' && p.trim().length > 0));
-    } else if (payload.img) {
-      list = [payload.img];
-    }
-
-    // Jika photos masih kosong, cari URL gambar yang mungkin tertempel di teks deskripsi
-    if (list.length === 0 && (payload.desc || payload.description)) {
-      const text = payload.desc || payload.description || '';
-      const matched = text.match(/(https?:\/\/[^\s]+)/g);
-      if (matched) {
-        list = matched;
-      }
-    }
-    return list;
-  }, [payload]);
-
-  // 2. Bersihkan teks deskripsi dari tumpukan URL mentah agar artikel mini-blog rapi
-  const cleanDescription = useMemo(() => {
-    const rawText = payload?.desc || payload?.description || '';
-    if (!rawText) return 'Belum ada catatan narasi deskripsi untuk kegiatan ini.';
-
-    // Hapus URL yang sudah diolah menjadi foto carousel agar tidak dobel tampil di teks
-    let cleaned = rawText;
-    photosList.forEach((url) => {
-      cleaned = cleaned.split(url).join('');
-    });
-    cleaned = cleaned.trim();
-    return cleaned.length > 0 ? cleaned : 'Dokumentasi kegiatan ditampilkan pada carousel foto di atas.';
-  }, [payload, photosList]);
-
-  const handlePrevPhoto = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setActivePhotoIdx((prev) => (prev === 0 ? photosList.length - 1 : prev - 1));
-  };
-
-  const handleNextPhoto = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setActivePhotoIdx((prev) => (prev === photosList.length - 1 ? 0 : prev + 1));
-  };
-
-  return (
+  return createPortal(
     <div
       onClick={onClose}
-      className={`fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        }`}
+      className={`event-drawer-backdrop ${isOpen ? 'is-open' : ''}`}
     >
       <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="drawer-heading"
+        tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className={`w-full max-w-md bg-[#1d2e26] border-t border-[#385948] rounded-t-[32px] p-5 shadow-2xl space-y-4 max-h-[88vh] overflow-y-auto transform transition-transform duration-300 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-full'
-          }`}
+        className={`event-drawer-panel ${isOpen ? 'is-open' : ''}`}
       >
-        {/* Drag handle */}
-        <div className="w-12 h-1 bg-[#385948] rounded-full mx-auto -mt-1 mb-2" />
-
-        {/* Header Drawer */}
-        <div className="flex justify-between items-center pb-2 border-b border-[#2d473a]">
-          <h3 className="text-xs font-bold text-[#86cfa7] uppercase tracking-wider flex items-center gap-1.5">
+        <div className="event-drawer-handle" />
+        <div className="event-drawer-header">
+          <h3 id="drawer-heading">
             {type === 'member' && 'Profil Pengurus'}
-            {type === 'event' && (
-              <>
-                <ImageIcon className="w-3.5 h-3.5" />
-                <span>Agenda Kegiatan (Mini Blog)</span>
-              </>
-            )}
+            {type === 'event' && <><ImageIcon size={15} /><span>Dokumentasi Kegiatan</span></>}
             {type === 'notification' && 'Pusat Notifikasi'}
           </h3>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-full bg-[#2a4336] text-[#8da698] hover:text-white transition"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <DrawerButton className="event-drawer-close" onClick={onClose} aria-label="Tutup detail" title="Tutup detail"><X size={18} /></DrawerButton>
         </div>
 
         {/* 1. KONTEN MEMBER (LAYOUT ALA INSTAGRAM) */}
@@ -262,110 +236,22 @@ export const BottomDrawer: React.FC<BottomDrawerProps> = ({ isOpen, type, payloa
           </div>
         )}
 
-        {/* 2. KONTEN EVENT MINI BLOG DENGAN INTERACTIVE PHOTO CAROUSEL */}
         {type === 'event' && payload && (
-          <div className="space-y-4">
-            {/* Photo Carousel Mini Blog */}
-            {photosList.length > 0 ? (
-              <div className="space-y-2">
-                <div className="relative h-60 w-full rounded-2xl overflow-hidden border border-[#2d473a] bg-[#142019] group shadow-inner">
-                  <img
-                    src={photosList[activePhotoIdx]}
-                    alt={`Dokumentasi ${activePhotoIdx + 1}`}
-                    className="w-full h-full object-cover transition-all duration-300"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&auto=format&fit=crop';
-                    }}
-                  />
-
-                  {/* Overlay gradien halus */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 pointer-events-none" />
-
-                  {/* Kategori Badge */}
-                  <span className="absolute top-3 left-3 bg-[#121c17]/85 backdrop-blur-md text-[#86cfa7] text-[10px] font-bold px-3 py-1 rounded-lg border border-[#385948]/50 shadow-md">
-                    {payload.category || 'Kegiatan'}
-                  </span>
-
-                  {/* Indikator Angka */}
-                  <span className="absolute bottom-3 right-3 bg-[#121c17]/85 backdrop-blur-md text-white text-[11px] font-mono px-2.5 py-0.5 rounded-md border border-[#385948]/50 shadow-md">
-                    {activePhotoIdx + 1} / {photosList.length}
-                  </span>
-
-                  {/* Tombol Geser Kiri / Kanan */}
-                  {photosList.length > 1 && (
-                    <>
-                      <button
-                        onClick={handlePrevPhoto}
-                        className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/60 hover:bg-[#86cfa7] text-white hover:text-black backdrop-blur-md transition-all shadow-lg active:scale-90"
-                        title="Foto Sebelumnya"
-                      >
-                        <ChevronLeft className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={handleNextPhoto}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/60 hover:bg-[#86cfa7] text-white hover:text-black backdrop-blur-md transition-all shadow-lg active:scale-90"
-                        title="Foto Berikutnya"
-                      >
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
-                    </>
-                  )}
-                </div>
-
-                {/* Thumbnails Carousel Geser jika foto > 1 */}
-                {photosList.length > 1 && (
-                  <div className="flex gap-2 overflow-x-auto no-scrollbar py-1 px-0.5">
-                    {photosList.map((url, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setActivePhotoIdx(idx)}
-                        className={`relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 border-2 transition-all ${activePhotoIdx === idx
-                            ? 'border-[#86cfa7] scale-105 shadow-md shadow-[#86cfa7]/20 ring-2 ring-[#86cfa7]/30'
-                            : 'border-[#2d473a] opacity-50 hover:opacity-80'
-                          }`}
-                      >
-                        <img
-                          src={url}
-                          alt={`Thumb ${idx + 1}`}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=200&auto=format&fit=crop';
-                          }}
-                        />
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : null}
-
-            {/* Judul & Detail Waktu / Lokasi */}
-            <div>
-              <h2 className="text-lg font-extrabold text-white leading-snug">{payload.title}</h2>
-              <div className="flex flex-wrap gap-2.5 mt-2.5 text-xs text-[#8da698] bg-[#16241d] p-3 rounded-xl border border-[#2d473a]">
-                <div className="flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-[#86cfa7]" />
-                  <span>{payload.date}</span>
-                </div>
-                {payload.location && (
-                  <div className="flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-[#86cfa7]" />
-                    <span>{payload.location}</span>
-                  </div>
-                )}
+          <article className="event-detail">
+            <EventPhotoCarousel key={String(payload.id ?? payload.title)} photos={photosList} title={payload.title || 'Kegiatan'} />
+            <div className="event-detail-heading">
+              <span className="event-detail-category">{payload.category || payload.cat || 'Kegiatan'}</span>
+              <h2>{payload.title}</h2>
+              <div className="event-detail-meta">
+                {payload.date && <span><Calendar size={14} />{payload.date}</span>}
+                {payload.location && <span><MapPin size={14} />{payload.location}</span>}
               </div>
             </div>
-
-            {/* Artikel Narasi Deskripsi Mini Blog (Sudah dibersihkan dari URL mentah) */}
-            <div className="space-y-2 pt-2 border-t border-[#2d473a]">
-              <span className="text-[11px] font-bold text-[#86cfa7] uppercase tracking-wider block">
-                Tentang Kegiatan:
-              </span>
-              <p className="text-xs text-[#b0c8bb] leading-relaxed whitespace-pre-line bg-[#16241d]/70 p-3.5 rounded-xl border border-[#2d473a]/50">
-                {cleanDescription}
-              </p>
+            <div className="event-detail-description">
+              <h3>Tentang kegiatan</h3>
+              <p>{cleanDescription || 'Belum ada deskripsi kegiatan.'}</p>
             </div>
-          </div>
+          </article>
         )}
 
         {/* 3. KONTEN NOTIFIKASI */}
@@ -383,6 +269,7 @@ export const BottomDrawer: React.FC<BottomDrawerProps> = ({ isOpen, type, payloa
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

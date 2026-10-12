@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../utils/supabase';
 import { X, User, Calendar, DollarSign, Info, Image as ImageIcon } from 'lucide-react';
-import { getRobotAvatar } from '../../utils/avatar';
+import { getRobotAvatar } from '@/utils/avatar';
+import { getEventPhotos, parsePhotoUrls } from '@/utils/eventPhotos';
+import { EventPhotoCarousel } from '@/components/EventPhotoCarousel';
 
 interface MasterRoleOption {
   department: string;
@@ -124,11 +126,11 @@ export const AdminInputModal: React.FC<Props> = ({
       } else if (type === 'event') {
         setEventTitle(mode === 'duplicate' ? `${initialData.title} (Copy)` : initialData.title || '');
         setEventDate(initialData.date || '');
-        setEventCategory(initialData.category || '');
+        setEventCategory(initialData.category || initialData.cat || '');
         setEventDesc(initialData.desc || initialData.description || '');
         setEventStatus(initialData.status || 'upcoming');
         setEventLocation(initialData.location || '');
-        const photos = Array.isArray(initialData.photos) ? initialData.photos.join('\n') : '';
+        const photos = getEventPhotos(initialData).join('\n');
         setEventPhotosText(photos);
       } else if (type === 'transaction') {
         setTxDesc(mode === 'duplicate' ? `${initialData.desc} (Copy)` : initialData.desc || '');
@@ -241,10 +243,10 @@ export const AdminInputModal: React.FC<Props> = ({
         }
       } else if (type === 'event') {
         // Parse multi-line photo URLs
-        const photosArray = eventPhotosText
-          .split('\n')
-          .map(url => url.trim())
-          .filter(url => url.length > 0);
+        const photosArray = parsePhotoUrls(eventPhotosText);
+        if (eventPhotosText.trim() && photosArray.length === 0) {
+          throw new Error('URL foto tidak valid. Gunakan tautan gambar langsung dengan http:// atau https://.');
+        }
 
         const chosenCategory = eventCategory || 'Umum';
         const descText = eventDesc.trim();
@@ -536,13 +538,17 @@ export const AdminInputModal: React.FC<Props> = ({
                   <span>Koleksi Foto Kegiatan (Masukkan 1 URL per baris)</span>
                 </label>
                 <textarea
+                  id="event-photos"
+                  aria-label="Koleksi foto kegiatan"
                   rows={3}
                   placeholder={"https://contoh.com/foto1.jpg\nhttps://contoh.com/foto2.jpg\nhttps://contoh.com/foto3.jpg"}
                   value={eventPhotosText}
                   onChange={(e) => setEventPhotosText(e.target.value)}
                   className="w-full bg-[#15231c] border border-[#2d473a] rounded-xl px-3 py-2 text-xs text-white placeholder-[#456755] outline-none font-mono text-[11px]"
                 />
-                <p className="text-[10px] text-[#8da698] mt-0.5">Foto akan otomatis ditampilkan sebagai photo carousel yang bisa digeser.</p>
+                {eventPhotosText.trim() && <div className="event-form-preview">
+                  <EventPhotoCarousel photos={parsePhotoUrls(eventPhotosText)} title={eventTitle || 'Kegiatan'} />
+                </div>}
               </div>
 
               {/* Mini Blog: Deskripsi Narasi Lengkap */}
