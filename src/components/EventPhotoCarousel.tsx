@@ -10,13 +10,11 @@ export function EventPhotoCarousel({ photos, title }: Props) {
   const [loaded, setLoaded] = useState<Record<string, boolean>>({});
   const [retry, setRetry] = useState(0);
   const start = useRef<{ x: number; y: number } | null>(null);
-  const thumbRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const signature = photos.join('\n');
   useEffect(() => { setIndex(0); setFailed({}); setLoaded({}); }, [signature]);
   const active = Math.min(index, Math.max(photos.length - 1, 0));
   const url = photos[active];
   const go = (step: number) => setIndex(current => (current + step + photos.length) % photos.length);
-  useEffect(() => { thumbRefs.current[active]?.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }, [active]);
 
   if (!photos.length) return <div className="event-photo-empty"><ImageOff size={28} /><span>Belum ada foto kegiatan</span></div>;
 
@@ -63,7 +61,7 @@ export function EventPhotoCarousel({ photos, title }: Props) {
         </>}
       </div>
       {photos.length > 1 && <div className="event-photo-thumbnails" aria-label="Pratinjau foto">
-        {photos.map((photo, i) => <DrawerButton key={photo} ref={undefined} className={`event-photo-thumb ${active === i ? 'is-active' : ''}`} aria-label={`Pilih foto ${i + 1}`} aria-pressed={active === i} title={`Foto ${i + 1}`} onClick={() => setIndex(i)}>
+        {photos.map((photo, i) => <DrawerButton key={photo} className={`event-photo-thumb ${active === i ? 'is-active' : ''}`} aria-label={`Pilih foto ${i + 1}`} aria-pressed={active === i} title={`Foto ${i + 1}`} onClick={() => setIndex(i)}>
           {failed[photo] ? <ImageOff size={18} /> : <img src={photo} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(old => ({ ...old, [photo]: true }))} />}
         </DrawerButton>)}
       </div>}
