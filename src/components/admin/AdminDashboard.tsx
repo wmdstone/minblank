@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../utils/supabase';
-import { Users, Calendar, Wallet, Trash2, Plus, ArrowLeft, Filter } from 'lucide-react';
+import { Users, Calendar, Wallet, Trash2, Plus, ArrowLeft, Settings } from 'lucide-react';
 import { AdminInputModal } from './AdminInputModal';
+import { MasterDataTab } from './MasterDataTab';
 
 interface AdminDashboardProps {
   onBackToApp: () => void;
@@ -10,7 +11,8 @@ interface AdminDashboardProps {
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToApp, currentAngkatan }) => {
   const [selectedAngkatan, setSelectedAngkatan] = useState(currentAngkatan);
-  const [activeTab, setActiveTab] = useState<'member' | 'event' | 'transaction'>('member');
+  const [activeTab, setActiveTab] = useState<'member' | 'event' | 'transaction' | 'master'>('member');
+  const [availableAngkatan, setAvailableAngkatan] = useState<string[]>([]);
   const [members, setMembers] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -19,6 +21,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToApp, cur
 
   const fetchAdminData = async () => {
     setLoading(true);
+    // Ambil daftar organisasi yang terdaftar
+    const { data: orgs } = await supabase.from('organizations').select('id').order('id', { ascending: false });
+    const orgList = orgs?.map((o) => o.id) || ['2026', '2025'];
+    setAvailableAngkatan(orgList);
+
     const { data: mData } = await supabase.from('members').select('*').eq('org_id', selectedAngkatan);
     const { data: eData } = await supabase.from('events').select('*').eq('org_id', selectedAngkatan);
     const { data: tData } = await supabase.from('transactions').select('*').eq('org_id', selectedAngkatan);
@@ -34,7 +41,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToApp, cur
   }, [selectedAngkatan]);
 
   const deleteItem = async (table: string, id: string) => {
-    if (!confirm('Hapus item ini dari Supabase?')) return;
+    if (!confirm('Hapus item ini dari database?')) return;
     await supabase.from(table).delete().eq('id', id);
     fetchAdminData();
   };
@@ -44,44 +51,47 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToApp, cur
       {/* Top Header */}
       <div className="p-4 bg-[#1d2e26] border-b border-[#2d473a] flex justify-between items-center">
         <div className="flex items-center space-x-2">
-          <button onClick={onBackToApp} className="p-2 bg-[#2a4336] rounded-xl text-[#8da698] hover:text-white">
+          <button onClick={onBackToApp} className="p-2 bg-[#2a4336] rounded-xl text-[#8da698] hover:text-white transition">
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <h2 className="font-bold text-sm">Panel Admin Organisasi</h2>
-            <p className="text-[10px] text-[#86cfa7]">Kelola Database Supabase</p>
+            <h2 className="font-bold text-sm">Dashboard Admin</h2>
+            <p className="text-[10px] text-[#86cfa7]">Kelola Database & Master Data</p>
           </div>
         </div>
 
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="px-3.5 py-2 bg-[#86cfa7] hover:bg-[#97dfb7] text-[#121c17] rounded-xl text-xs font-bold flex items-center space-x-1.5 transition"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Tambah</span>
-        </button>
+        {activeTab !== 'master' && (
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="px-3.5 py-2 bg-[#86cfa7] hover:bg-[#97dfb7] text-[#121c17] rounded-xl text-xs font-bold flex items-center space-x-1.5 transition"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Tambah</span>
+          </button>
+        )}
       </div>
 
-      {/* Filter Angkatan Selector */}
-      <div className="px-4 py-2.5 bg-[#1d2e26]/80 border-b border-[#2d473a] flex items-center justify-between">
-        <div className="flex items-center space-x-1.5 text-xs text-[#8da698]">
-          <Filter className="w-3.5 h-3.5 text-[#86cfa7]" />
-          <span>Angkatan:</span>
+      {/* Selector Angkatan (Hanya tampil di tab data, bukan master) */}
+      {activeTab !== 'master' && (
+        <div className="px-4 py-2.5 bg-[#1d2e26]/80 border-b border-[#2d473a] flex items-center justify-between">
+          <span className="text-xs text-[#8da698]">Angkatan Aktif:</span>
+          <select
+            value={selectedAngkatan}
+            onChange={(e) => setSelectedAngkatan(e.target.value)}
+            className="bg-[#2a4336] text-emerald-300 text-xs font-bold px-3 py-1.5 rounded-xl border border-[#385948] outline-none"
+          >
+            {availableAngkatan.map((yr) => (
+              <option key={yr} value={yr}>Angkatan {yr}</option>
+            ))}
+          </select>
         </div>
-        <input
-          type="text"
-          value={selectedAngkatan}
-          onChange={(e) => setSelectedAngkatan(e.target.value)}
-          className="bg-[#2a4336] text-white text-xs font-bold px-3 py-1.5 rounded-xl border border-[#385948] outline-none w-28 text-center"
-          placeholder="2026"
-        />
-      </div>
+      )}
 
-      {/* Nav Tabs */}
-      <div className="flex border-b border-[#2d473a] bg-[#1d2e26]/50 px-4">
+      {/* 4 Tabs: Pengurus, Kegiatan, Kas, dan Master Data */}
+      <div className="flex border-b border-[#2d473a] bg-[#1d2e26]/50 px-2 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setActiveTab('member')}
-          className={`py-3 px-3 text-xs font-bold border-b-2 flex items-center space-x-1.5 ${
+          className={`py-3 px-3 text-xs font-bold border-b-2 flex items-center space-x-1.5 whitespace-nowrap ${
             activeTab === 'member' ? 'border-[#86cfa7] text-[#86cfa7]' : 'border-transparent text-[#8da698]'
           }`}
         >
@@ -90,7 +100,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToApp, cur
         </button>
         <button
           onClick={() => setActiveTab('event')}
-          className={`py-3 px-3 text-xs font-bold border-b-2 flex items-center space-x-1.5 ${
+          className={`py-3 px-3 text-xs font-bold border-b-2 flex items-center space-x-1.5 whitespace-nowrap ${
             activeTab === 'event' ? 'border-[#86cfa7] text-[#86cfa7]' : 'border-transparent text-[#8da698]'
           }`}
         >
@@ -99,19 +109,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToApp, cur
         </button>
         <button
           onClick={() => setActiveTab('transaction')}
-          className={`py-3 px-3 text-xs font-bold border-b-2 flex items-center space-x-1.5 ${
+          className={`py-3 px-3 text-xs font-bold border-b-2 flex items-center space-x-1.5 whitespace-nowrap ${
             activeTab === 'transaction' ? 'border-[#86cfa7] text-[#86cfa7]' : 'border-transparent text-[#8da698]'
           }`}
         >
           <Wallet className="w-3.5 h-3.5" />
           <span>Kas ({transactions.length})</span>
         </button>
+        <button
+          onClick={() => setActiveTab('master')}
+          className={`py-3 px-3 text-xs font-bold border-b-2 flex items-center space-x-1.5 whitespace-nowrap ${
+            activeTab === 'master' ? 'border-[#86cfa7] text-[#86cfa7]' : 'border-transparent text-[#8da698]'
+          }`}
+        >
+          <Settings className="w-3.5 h-3.5" />
+          <span>Master Data</span>
+        </button>
       </div>
 
-      {/* Konten List Data */}
+      {/* Konten Tab */}
       <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
-        {loading ? (
-          <p className="text-center text-xs text-[#8da698] py-8">Mengambil data Angkatan {selectedAngkatan}...</p>
+        {activeTab === 'master' ? (
+          <MasterDataTab />
+        ) : loading ? (
+          <p className="text-center text-xs text-[#8da698] py-8">Memuat data...</p>
         ) : activeTab === 'member' ? (
           members.length === 0 ? (
             <p className="text-center text-xs text-[#8da698] py-8">Belum ada pengurus di Angkatan {selectedAngkatan}.</p>
@@ -149,7 +170,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToApp, cur
           )
         ) : (
           transactions.length === 0 ? (
-            <p className="text-center text-xs text-[#8da698] py-8">Belum ada kas di Angkatan {selectedAngkatan}.</p>
+            <p className="text-center text-xs text-[#8da698] py-8">Belum ada transaksi di Angkatan {selectedAngkatan}.</p>
           ) : (
             transactions.map((t) => (
               <div key={t.id} className="p-3 bg-[#2a4336] rounded-2xl flex items-center justify-between border border-[#385948]">
@@ -171,13 +192,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToApp, cur
         )}
       </div>
 
-      <AdminInputModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        defaultAngkatan={selectedAngkatan}
-        type={activeTab}
-        onSuccess={fetchAdminData}
-      />
+      {activeTab !== 'master' && (
+        <AdminInputModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          defaultAngkatan={selectedAngkatan}
+          type={activeTab as any}
+          onSuccess={fetchAdminData}
+        />
+      )}
     </div>
   );
 };
